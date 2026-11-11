@@ -15,6 +15,17 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   no: "nb-NO",
 };
 
+// the only locale folders that carry a region or script; any other tag such
+// as en-GB or de-AT uses its base language folder, saving a 404 per namespace
+const REGIONAL_LOCALES = new Set([
+  "nb-NO",
+  "pt-BR",
+  "sr-Latn",
+  "yue-Hant",
+  "zh-CN",
+  "zh-Hant",
+]);
+
 function detectLanguage(): string {
   let stored: string | null = null;
   try {
@@ -23,7 +34,9 @@ function detectLanguage(): string {
     // storage blocked
   }
   const raw = stored ?? navigator.language ?? "en";
-  return LANGUAGE_ALIASES[raw] ?? raw;
+  const language = LANGUAGE_ALIASES[raw] ?? raw;
+  if (REGIONAL_LOCALES.has(language)) return language;
+  return language.split("-")[0] || "en";
 }
 
 /** bumps whenever translations or the language change, so t() re-renders */

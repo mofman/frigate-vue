@@ -34,6 +34,16 @@ export default defineConfig({
     },
   },
   plugins: [vue()],
+  experimental: {
+    // Frigate's nginx swaps /BASE_PATH/ in index.html for the real base
+    // (eg the Home Assistant ingress path), but its rewrite rules do not
+    // cover every way a bundler writes URLs inside JS. Assets referenced
+    // from JS and CSS are resolved relative to the file instead, which works
+    // under any base path without relying on nginx.
+    renderBuiltUrl(_filename, { hostType }) {
+      return hostType === "html" ? undefined : { relative: true };
+    },
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
