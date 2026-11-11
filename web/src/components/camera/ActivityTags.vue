@@ -6,10 +6,16 @@ import { useT } from "@/composables/useT";
 import type { ObjectType } from "@/types/frigate";
 
 const props = withDefaults(
-  defineProps<{ objects: ObjectType[]; motion?: boolean; max?: number }>(),
+  defineProps<{
+    objects: ObjectType[];
+    motion?: boolean;
+    max?: number;
+    size?: "sm" | "md";
+  }>(),
   {
     motion: false,
     max: 3,
+    size: "sm",
   },
 );
 
@@ -38,11 +44,13 @@ const groups = computed(() => {
       :key="group.label"
       :label="group.label"
       :text="group.text"
+      :size="size"
     />
     <DetectionTag
       v-if="!groups.length && motion"
       label="motion"
       :text="t('activity.motion')"
+      :size="size"
     />
   </div>
 </template>

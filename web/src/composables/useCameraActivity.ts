@@ -112,16 +112,20 @@ export function useCameraActivity(camera: MaybeRefOrGetter<string>) {
   };
 }
 
+export type CameraFeature =
+  | "detect"
+  | "recordings"
+  | "snapshots"
+  | "audio"
+  | "audio_transcription"
+  | "notifications"
+  | "enabled"
+  | "ptz_autotracker";
+
 /** A camera feature toggle backed by the ws state/set topic pair. */
 export function useFeatureState(
   camera: MaybeRefOrGetter<string>,
-  feature:
-    | "detect"
-    | "recordings"
-    | "snapshots"
-    | "audio"
-    | "enabled"
-    | "ptz_autotracker",
+  feature: CameraFeature,
 ) {
   const state = useWsTopic<string>(() => `${toValue(camera)}/${feature}/state`);
   return {

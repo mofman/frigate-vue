@@ -30,6 +30,8 @@ export type LeaseRequest = {
   iceServers?: RTCIceServer[];
   /** keep streaming while the tab is hidden */
   background?: boolean;
+  /** webrtc only: also send the microphone (two way talk) */
+  talk?: boolean;
 };
 
 export type Lease = {
@@ -39,8 +41,12 @@ export type Lease = {
 
 const entries = new Map<string, Entry>();
 
-function keyFor({ mode, stream, camera }: LeaseRequest) {
-  return mode === "jsmpeg" ? `jsmpeg:${camera}` : `${mode}:${stream}`;
+function keyFor({ mode, stream, camera, talk }: LeaseRequest) {
+  if (mode === "jsmpeg") return `jsmpeg:${camera}`;
+  // a talking session holds the microphone, never share it with tiles
+  return mode === "webrtc" && talk
+    ? `webrtc-talk:${stream}`
+    : `${mode}:${stream}`;
 }
 
 function create(request: LeaseRequest): LiveSession {
@@ -48,7 +54,11 @@ function create(request: LeaseRequest): LiveSession {
     case "mse":
       return new MseSession(request.stream);
     case "webrtc":
-      return new WebRtcSession(request.stream, request.iceServers);
+      return new WebRtcSession(
+        request.stream,
+        request.iceServers,
+        !!request.talk,
+      );
     case "jsmpeg":
       return new JsmpegSession(request.camera);
   }

@@ -23,6 +23,12 @@ export function useProfile() {
   });
 }
 
+/** True when the signed in user has the admin role. */
+export function useIsAdmin() {
+  const { data: profile } = useProfile();
+  return computed(() => profile.value?.role === "admin");
+}
+
 /** Cameras the current user may view, sorted by ui.order. */
 export function useCameras() {
   const { data: config } = useConfig();

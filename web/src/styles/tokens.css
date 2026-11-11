@@ -18,6 +18,7 @@
     --bg-overlay-control: rgb(10 15 18 / 0.72);
     --bg-overlay-control-hover: rgb(31 42 48 / 0.86);
     --bg-tabbar: rgb(12 12 22 / 0.85);
+    --backdrop-dialog: rgb(0 0 0 / 0.55);
     --bg-chip-on-media: rgb(0 0 0 / 0.42);
     --bg-chip-on-media-strong: rgb(0 0 0 / 0.55);
     --bg-badge-neutral: rgb(100 113 132 / 0.68);
@@ -124,6 +125,7 @@
     --status-height: 40px;
     --tabbar-height: 64px;
     --timeline-width: 100px;
+    --side-panel-width: 340px;
 
     /* shape */
     --radius: 8px;

@@ -6,7 +6,14 @@
  * it once it has painted a frame. Geometry is fixed per camera so nothing
  * shifts when the source changes.
  */
-import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from "vue";
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  shallowRef,
+  watch,
+  watchEffect,
+} from "vue";
 import { baseUrl } from "@/api/baseUrl";
 import { RecordingPlayer } from "@/players/recording";
 import type { Playback } from "@/composables/usePlayback";
@@ -16,6 +23,9 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner.vue";
 import FrameHold from "./FrameHold.vue";
 import LiveVideo from "./LiveVideo.vue";
 import PreviewScrubber from "./PreviewScrubber.vue";
+import StreamStats from "./StreamStats.vue";
+import { ZoomOut } from "@lucide/vue";
+import { useZoomPan } from "@/composables/useZoomPan";
 
 const props = withDefaults(
   defineProps<{
@@ -25,6 +35,11 @@ const props = withDefaults(
     preferredStream?: string;
     lowBandwidth?: boolean;
     playInBackground?: boolean;
+    volume?: number;
+    talk?: boolean;
+    showStats?: boolean;
+    /** wheel, pinch and drag zoom; off while PTZ click to move is on */
+    zoomable?: boolean;
     /** how long live stays connected after switching to recordings */
     liveWarmMs?: number;
   }>(),
@@ -33,11 +48,18 @@ const props = withDefaults(
     preferredStream: undefined,
     lowBandwidth: false,
     playInBackground: false,
+    volume: 1,
+    talk: false,
+    showStats: false,
+    zoomable: true,
     liveWarmMs: 60_000,
   },
 );
 
-const emit = defineEmits<{ switched: [kind: string, ms: number] }>();
+const emit = defineEmits<{
+  switched: [kind: string, ms: number];
+  talkFailed: [];
+}>();
 
 const { t } = useT(["views/app"]);
 type Layer = "live" | "recording" | "preview";
@@ -56,6 +78,11 @@ const holdRef = shallowRef<InstanceType<typeof FrameHold> | null>(null);
 const videoRef = shallowRef<HTMLVideoElement | null>(null);
 const stageRef = shallowRef<HTMLDivElement | null>(null);
 const recorder = shallowRef<RecordingPlayer>();
+const zoom = useZoomPan(stageRef, () => props.zoomable);
+watch(
+  () => props.camera.name,
+  () => zoom.reset(),
+);
 
 const aspect = computed(() => {
   const { width, height } = props.camera.detect;
@@ -212,6 +239,9 @@ watch(previewHasFrame, (has) => {
   }
 });
 
+watch(playback.rate, (rate) => recorder.value?.setRate(rate));
+watchEffect(() => recorder.value?.setVolume(props.volume));
+
 watch(playback.playing, (playing) => {
   if (playback.mode.value !== "recording" || playback.scrubbing.value) return;
   if (playing) recorder.value?.play();
@@ -301,7 +331,21 @@ const loading = computed(() => {
 });
 const holdVisible = computed(() => holdRef.value?.visible ?? false);
 
-defineExpose({ stage: stageRef });
+/** The video currently on screen, for snapshots and picture in picture. */
+function activeVideo(): HTMLVideoElement | undefined {
+  if (visible.value === "recording") return videoRef.value ?? undefined;
+  if (visible.value === "live") return liveRef.value?.videoElement();
+  return undefined;
+}
+
+/** Whatever is painting the current frame, video or canvas. */
+function activeFrame() {
+  return frameSource();
+}
+
+const liveSession = computed(() => liveRef.value?.session);
+
+defineExpose({ stage: stageRef, activeVideo, activeFrame, layer: visible });
 </script>
 
 <template>
@@ -311,43 +355,74 @@ defineExpose({ stage: stageRef });
       class="stage"
       :style="{ '--aspect': aspect }"
       :data-layer="visible"
+      :class="{
+        'is-zoomed': zoom.zoomed.value,
+        'is-panning': zoom.panning.value,
+      }"
     >
-      <div class="stage__layer" :class="{ 'is-active': visible === 'live' }">
-        <LiveVideo
-          ref="liveRef"
-          :camera="camera"
-          :enabled="liveEnabled"
-          :parked="liveParked"
-          :muted="muted || visible !== 'live'"
-          :preferred-stream="preferredStream"
-          :low-bandwidth="lowBandwidth"
-          :background="playInBackground"
-          @frame="liveFrames++"
-          @failed="liveFailed = true"
-        />
-      </div>
-      <div
-        class="stage__layer"
-        :class="{ 'is-active': visible === 'recording' }"
-      >
-        <video
-          ref="videoRef"
-          class="stage__video"
-          :muted="muted || visible !== 'recording'"
-          playsinline
-        />
-      </div>
-      <div class="stage__layer" :class="{ 'is-active': visible === 'preview' }">
-        <PreviewScrubber
-          ref="previewRef"
-          :camera="camera.name"
-          :time="playback.scrubTime.value"
-          :active="playback.scrubbing.value"
-          @frame="previewHasFrame = $event"
-        />
+      <div class="stage__media" :style="zoom.style.value">
+        <div class="stage__layer" :class="{ 'is-active': visible === 'live' }">
+          <LiveVideo
+            ref="liveRef"
+            :camera="camera"
+            :enabled="liveEnabled"
+            :parked="liveParked"
+            :muted="muted || visible !== 'live'"
+            :preferred-stream="preferredStream"
+            :low-bandwidth="lowBandwidth"
+            :background="playInBackground"
+            :volume="volume"
+            :talk="talk"
+            @frame="liveFrames++"
+            @failed="liveFailed = true"
+            @talk-failed="emit('talkFailed')"
+          />
+        </div>
+        <div
+          class="stage__layer"
+          :class="{ 'is-active': visible === 'recording' }"
+        >
+          <video
+            ref="videoRef"
+            class="stage__video"
+            :muted="muted || visible !== 'recording'"
+            playsinline
+          />
+        </div>
+        <div
+          class="stage__layer"
+          :class="{ 'is-active': visible === 'preview' }"
+        >
+          <PreviewScrubber
+            ref="previewRef"
+            :camera="camera.name"
+            :time="playback.scrubTime.value"
+            :active="playback.scrubbing.value"
+            @frame="previewHasFrame = $event"
+          />
+        </div>
+
+        <FrameHold ref="holdRef" :poster="poster" />
       </div>
 
-      <FrameHold ref="holdRef" :poster="poster" />
+      <button
+        v-if="zoom.zoomed.value"
+        type="button"
+        class="stage__zoom"
+        :title="t('player.resetZoom')"
+        @click="zoom.reset()"
+      >
+        <ZoomOut :size="14" aria-hidden="true" />
+        {{ zoom.scale.value.toFixed(1) }}×
+      </button>
+
+      <StreamStats
+        v-if="showStats"
+        :layer="visible"
+        :live-mode="liveRef?.mode"
+        :live-session="liveSession"
+        :recording="videoRef"
+      />
 
       <div v-if="loading && !holdVisible" class="stage__status">
         <LoadingSpinner :label="t('player.loading')" />
@@ -409,6 +484,52 @@ defineExpose({ stage: stageRef });
     border-color: color-mix(in srgb, var(--alert-amber) 60%, transparent);
     box-shadow: inset 0 0 0 1px
       color-mix(in srgb, var(--alert-amber) 14%, transparent);
+  }
+}
+
+.stage__media {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.stage.is-zoomed {
+  cursor: grab;
+  touch-action: none;
+}
+
+.stage.is-panning {
+  cursor: grabbing;
+}
+
+/* pinch needs the browser to leave two finger gestures alone */
+.stage {
+  touch-action: pan-y;
+}
+
+.stage__zoom {
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  block-size: 28px;
+  padding-inline: 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-overlay);
+  background: var(--bg-overlay-control);
+  backdrop-filter: blur(12px);
+  color: var(--text-on-media);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+
+  &:hover {
+    background: var(--bg-overlay-control-hover);
   }
 }
 

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /** Recent unreviewed activity next to the camera grid. */
-import { computed } from "vue";
-import { ArrowRight, ListFilter } from "@lucide/vue";
+import { computed, shallowRef } from "vue";
+import { ArrowRight } from "@lucide/vue";
 import { useRouter } from "vue-router";
 import { useQuery } from "@/api/query";
 import { onWsMessage } from "@/api/ws";
 import { useT } from "@/composables/useT";
-import IconButton from "@/components/ui/IconButton.vue";
+import { useConfig } from "@/composables/useFrigate";
+import ReviewFilter, { type ReviewFilterValue } from "./ReviewFilter.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import type { ReviewSegment } from "@/types/frigate";
 import { markReviewed, reviewStart } from "@/utils/review";
@@ -16,11 +17,32 @@ const props = defineProps<{ cameras: string[] }>();
 const { t } = useT(["views/app"]);
 const router = useRouter();
 
+const { data: config } = useConfig();
+const filter = shallowRef<ReviewFilterValue>({
+  severity: "all",
+  labels: [],
+  zones: [],
+});
+const labels = computed(() => [
+  ...new Set(
+    props.cameras.flatMap(
+      (name) => config.value?.cameras[name]?.objects?.track ?? [],
+    ),
+  ),
+]);
+
 const key = computed(() =>
   props.cameras.length
     ? ([
         "review",
-        { limit: 20, reviewed: 0, cameras: props.cameras.join(",") },
+        {
+          limit: 20,
+          reviewed: 0,
+          cameras: props.cameras.join(","),
+          severity:
+            filter.value.severity === "all" ? undefined : filter.value.severity,
+          labels: filter.value.labels.join(",") || undefined,
+        },
       ] as const)
     : null,
 );
@@ -43,14 +65,7 @@ function open(review: ReviewSegment) {
   <aside class="activity-panel">
     <div class="activity-panel__header">
       <h2 class="activity-panel__title">{{ t("dashboard.recentActivity") }}</h2>
-      <RouterLink v-slot="{ navigate }" to="/review" custom>
-        <IconButton
-          size="sm"
-          :label="t('dashboard.filterEvents')"
-          @click="navigate"
-          ><ListFilter
-        /></IconButton>
-      </RouterLink>
+      <ReviewFilter v-model="filter" :labels="labels" :zones="[]" size="sm" />
     </div>
     <div class="activity-panel__list">
       <ActivityItem

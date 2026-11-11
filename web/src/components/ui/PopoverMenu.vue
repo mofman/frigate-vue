@@ -16,10 +16,14 @@ const trigger = ref<HTMLElement | null>(null);
 const panel = ref<HTMLElement | null>(null);
 const open = ref(false);
 const position = ref<Record<string, string>>({});
+/** set by openAt() to place the menu at a point, eg a right click */
+let point: { x: number; y: number } | undefined;
 
 function place(align: "start" | "end") {
   // the wrapper is display: contents, so measure the actual trigger element
-  const anchor = trigger.value?.firstElementChild?.getBoundingClientRect();
+  const anchor = point
+    ? new DOMRect(point.x, point.y, 0, 0)
+    : trigger.value?.firstElementChild?.getBoundingClientRect();
   const menu = panel.value;
   if (!anchor || !menu) return;
   const { innerWidth, innerHeight } = window;
@@ -27,7 +31,10 @@ function place(align: "start" | "end") {
   const below = anchor.bottom + 6 + height <= innerHeight - 8;
   const top = below ? anchor.bottom + 6 : Math.max(8, anchor.top - 6 - height);
   const style: Record<string, string> = { top: `${top}px` };
-  if (align === "end")
+  if (point) {
+    const width = menu.offsetWidth;
+    style.left = `${Math.max(8, Math.min(anchor.left, innerWidth - width - 8))}px`;
+  } else if (align === "end")
     style.right = `${Math.max(8, innerWidth - anchor.right)}px`;
   else style.left = `${Math.max(8, anchor.left)}px`;
   position.value = style;
@@ -38,6 +45,8 @@ async function onToggle(event: Event, align: "start" | "end") {
   if (open.value) {
     await nextTick();
     place(align);
+  } else {
+    point = undefined;
   }
 }
 
@@ -45,7 +54,17 @@ function close() {
   panel.value?.hidePopover();
 }
 
-defineExpose({ close });
+/** Open at a viewport point rather than under the trigger. */
+function openAt(x: number, y: number) {
+  point = { x, y };
+  if (panel.value?.matches(":popover-open")) {
+    place("start");
+    return;
+  }
+  panel.value?.showPopover();
+}
+
+defineExpose({ close, openAt });
 </script>
 
 <template>

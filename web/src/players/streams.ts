@@ -29,7 +29,12 @@ export function cameraStreams(
 export function chooseStream(
   camera: CameraConfig,
   config: FrigateConfig,
-  options: { preferredStream?: string; lowBandwidth?: boolean } = {},
+  options: {
+    preferredStream?: string;
+    lowBandwidth?: boolean;
+    /** two way talk needs WebRTC, so it goes first in the chain */
+    talk?: boolean;
+  } = {},
 ): StreamChoice {
   const streams = cameraStreams(camera).map(([, stream]) => stream);
   const stream =
@@ -51,5 +56,12 @@ export function chooseStream(
     modes.push("webrtc");
   }
   modes.push("jsmpeg");
+  if (options.talk && supportsWebRtc()) {
+    return {
+      stream,
+      restreamed,
+      modes: ["webrtc", ...modes.filter((mode) => mode !== "webrtc")],
+    };
+  }
   return { stream, restreamed, modes };
 }

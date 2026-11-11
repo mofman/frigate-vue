@@ -5,7 +5,10 @@ import { useConfig } from "@/composables/useFrigate";
 import { useNow } from "@/composables/useUtil";
 import { formatTime, resolveTimezone } from "@/utils/time";
 
-const props = defineProps<{ time?: number }>();
+const props = withDefaults(
+  defineProps<{ time?: number; size?: "sm" | "md" }>(),
+  { time: undefined, size: "sm" },
+);
 const { data: config } = useConfig();
 const now = useNow(1000);
 
@@ -23,7 +26,7 @@ const label = computed(() =>
 </script>
 
 <template>
-  <time class="camera-time">{{ label }}</time>
+  <time class="camera-time" :class="`camera-time--${size}`">{{ label }}</time>
 </template>
 
 <style scoped>
@@ -37,5 +40,17 @@ const label = computed(() =>
   color: var(--text-on-media-faint);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.camera-time--md {
+  display: inline-flex;
+  align-items: center;
+  block-size: 26px;
+  padding-inline: 9px;
+  border: 1px solid var(--line-overlay);
+  background: var(--bg-overlay-control);
+  backdrop-filter: blur(12px);
+  font-size: var(--text-sm);
+  color: var(--text-on-media-muted);
 }
 </style>

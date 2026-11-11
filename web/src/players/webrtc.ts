@@ -1,5 +1,6 @@
 /** go2rtc WebRTC live stream, signaled over a WebSocket. */
 import { wsBaseUrl } from "@/api/baseUrl";
+import { shallowRef } from "vue";
 import { createVideoElement, LiveSession, playMuted } from "./session";
 
 const DEFAULT_ICE: RTCIceServer[] = [{ urls: "stun:stun.l.google.com:19302" }];
@@ -16,10 +17,15 @@ export class WebRtcSession extends LiveSession {
   private ws: WebSocket | null = null;
   private stallTimer: ReturnType<typeof setTimeout> | undefined;
   private lastTime = 0;
+  private mic: MediaStream | undefined;
+  /** set when two way talk was asked for but the microphone was refused */
+  readonly micDenied = shallowRef(false);
 
   constructor(
     stream: string,
     private iceServers: RTCIceServer[] = DEFAULT_ICE,
+    /** send the microphone to the camera (two way talk) */
+    readonly talk = false,
   ) {
     super("webrtc", stream);
     const video = this.element;
@@ -37,15 +43,35 @@ export class WebRtcSession extends LiveSession {
     this.status.value = "connecting";
     this.error.value = undefined;
 
+    if (this.talk && !this.mic && !this.micDenied.value) {
+      navigator.mediaDevices
+        .getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true },
+        })
+        .then((mic) => (this.mic = mic))
+        .catch(() => (this.micDenied.value = true))
+        .finally(() => {
+          // disconnected while the permission prompt was open
+          if (this.status.value === "connecting") this.open();
+        });
+      return;
+    }
+    this.open();
+  }
+
+  private open() {
+    if (this.pc) return;
     const pc = new RTCPeerConnection({
       bundlePolicy: "max-bundle",
       iceServers: this.iceServers,
     });
     this.pc = pc;
-    const tracks = ["video", "audio"].map(
-      (kind) =>
-        pc.addTransceiver(kind, { direction: "recvonly" }).receiver.track,
-    );
+    const micTrack = this.mic?.getAudioTracks()[0];
+    const video = pc.addTransceiver("video", { direction: "recvonly" });
+    const audio = micTrack
+      ? pc.addTransceiver(micTrack, { direction: "sendrecv" })
+      : pc.addTransceiver("audio", { direction: "recvonly" });
+    const tracks = [video.receiver.track, audio.receiver.track];
     this.element.srcObject = new MediaStream(tracks);
     this.watchFirstFrame(this.element);
     playMuted(this.element);
@@ -105,6 +131,12 @@ export class WebRtcSession extends LiveSession {
     this.pc?.close();
     this.pc = undefined;
     if (this.status.value !== "error") this.status.value = "idle";
+  }
+
+  destroy() {
+    this.mic?.getTracks().forEach((track) => track.stop());
+    this.mic = undefined;
+    super.destroy();
   }
 
   park() {

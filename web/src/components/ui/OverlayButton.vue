@@ -5,10 +5,13 @@ withDefaults(
     label: string;
     active?: boolean;
     tone?: "default" | "danger";
+    /** md is for the camera stage, sm for tiles */
+    size?: "sm" | "md";
   }>(),
   {
     active: false,
     tone: "default",
+    size: "sm",
   },
 );
 </script>
@@ -17,7 +20,10 @@ withDefaults(
   <button
     type="button"
     class="overlay-button"
-    :class="{ 'is-active': active, 'is-danger': tone === 'danger' }"
+    :class="[
+      `overlay-button--${size}`,
+      { 'is-active': active, 'is-danger': tone === 'danger' },
+    ]"
     :aria-label="label"
     :aria-pressed="active || undefined"
     :title="label"
@@ -62,5 +68,15 @@ withDefaults(
 .overlay-button :deep(svg) {
   inline-size: 14px;
   block-size: 14px;
+}
+
+.overlay-button--md {
+  inline-size: 34px;
+  block-size: 34px;
+}
+
+.overlay-button--md :deep(svg) {
+  inline-size: 17px;
+  block-size: 17px;
 }
 </style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** App frame: rail, page area and status bar. */
+import ToastHost from "@/components/ui/ToastHost.vue";
 import AppSidebar from "./AppSidebar.vue";
 import StatusBar from "./StatusBar.vue";
 </script>
@@ -11,6 +12,7 @@ import StatusBar from "./StatusBar.vue";
       <slot />
     </main>
     <StatusBar />
+    <ToastHost />
   </div>
 </template>
 

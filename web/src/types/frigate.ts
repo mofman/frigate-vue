@@ -12,7 +12,11 @@ export type CameraConfig = {
   record: { enabled: boolean; enabled_in_config: boolean };
   snapshots: { enabled: boolean };
   live: { height: number; quality: number; streams: Record<string, string> };
-  onvif?: { autotracking?: { enabled_in_config: boolean } };
+  audio_transcription?: { enabled_in_config: boolean; live_enabled?: boolean };
+  notifications?: { enabled: boolean; enabled_in_config: boolean };
+  objects?: { track: string[] };
+  zones?: Record<string, unknown>;
+  onvif?: { host?: string; autotracking?: { enabled_in_config: boolean } };
   ui: { order: number; dashboard: boolean };
   webui_url?: string | null;
 };
@@ -71,6 +75,9 @@ export type FrigateCameraState = {
     record: boolean;
     audio: boolean;
     autotracking: boolean;
+    audio_transcription?: boolean;
+    notifications?: boolean;
+    notifications_suspended?: number;
   };
   motion: boolean;
   objects: ObjectType[];

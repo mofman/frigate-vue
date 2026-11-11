@@ -219,7 +219,13 @@ export class RecordingPlayer {
   }
 
   setRate(rate: number) {
+    // a new source resets playbackRate to the default, so set both
+    this.video.defaultPlaybackRate = rate;
     this.video.playbackRate = rate;
+  }
+
+  setVolume(volume: number) {
+    this.video.volume = volume;
   }
 
   destroy() {

@@ -11,6 +11,8 @@ import { cameraActivityPayload } from "../fixtures/mock-data/camera-activity";
 
 export class WsMocker {
   private mockWs: WebSocketRoute | null = null;
+  /** every message the app sent, in order */
+  readonly sent: { topic: string; payload?: unknown }[] = [];
   private cameras: string[];
   // the live stats payload wins over the REST one in useAutoFrigateStats, so
   // both come from the same factory or a test's `stats` override is ignored
@@ -38,6 +40,7 @@ export class WsMocker {
     } catch {
       return;
     }
+    this.sent.push({ topic: data.topic, payload: data.payload });
 
     if (data.topic === "onConnect") {
       // Send initial camera_activity state

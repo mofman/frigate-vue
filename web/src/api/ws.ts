@@ -68,6 +68,17 @@ function applyCameraActivity(raw: string) {
     apply(`${name}/snapshots/state`, onOff(config.snapshots));
     apply(`${name}/audio/state`, onOff(config.audio));
     apply(`${name}/ptz_autotracker/state`, onOff(config.autotracking));
+    if (config.audio_transcription !== undefined)
+      apply(
+        `${name}/audio_transcription/state`,
+        onOff(config.audio_transcription),
+      );
+    if (config.notifications !== undefined)
+      apply(`${name}/notifications/state`, onOff(config.notifications));
+    apply(
+      `${name}/notifications/suspended`,
+      config.notifications_suspended ?? 0,
+    );
   }
 }
 

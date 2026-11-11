@@ -5,13 +5,15 @@
  * activity (and briefly after), which keeps big dashboards cheap.
  */
 import { computed, onBeforeUnmount, shallowRef, watch } from "vue";
-import { Camera, CircleDot, Expand } from "@lucide/vue";
-import { baseUrl } from "@/api/baseUrl";
+import { Camera, CircleDot, CircleStop, Expand } from "@lucide/vue";
 import { cameraLabel } from "@/composables/useFrigate";
-import {
-  useCameraActivity,
-  useFeatureState,
-} from "@/composables/useCameraActivity";
+import { useCameraActivity } from "@/composables/useCameraActivity";
+import { useManualRecording } from "@/composables/useManualRecording";
+import { saveSnapshot } from "@/utils/snapshot";
+import { useStreamAudio } from "@/composables/useStreamAudio";
+import { cameraStreams } from "@/players/streams";
+import StreamStats from "@/components/player/StreamStats.vue";
+import TileMenu from "./TileMenu.vue";
 import { useT } from "@/composables/useT";
 import type { CameraConfig } from "@/types/frigate";
 import OverlayButton from "@/components/ui/OverlayButton.vue";
@@ -27,14 +29,38 @@ const props = withDefaults(
     camera: CameraConfig;
     streaming?: "smart" | "continuous";
     transitionName?: string;
+    /** tile audio, off unless turned on from the tile menu */
+    muted?: boolean;
+    showStats?: boolean;
   }>(),
-  { streaming: "smart", transitionName: undefined },
+  {
+    streaming: "smart",
+    transitionName: undefined,
+    muted: true,
+    showStats: false,
+  },
 );
-const emit = defineEmits<{ open: [] }>();
+const emit = defineEmits<{
+  open: [];
+  "update:muted": [value: boolean];
+  "update:showStats": [value: boolean];
+  muteAll: [muted: boolean];
+}>();
 
 const { t } = useT(["views/app"]);
 const activity = useCameraActivity(() => props.camera.name);
-const recordings = useFeatureState(() => props.camera.name, "recordings");
+const manual = useManualRecording(() => props.camera.name);
+const audio = useStreamAudio(
+  () => cameraStreams(props.camera)[0]?.[1] ?? undefined,
+);
+const menu = shallowRef<InstanceType<typeof TileMenu> | null>(null);
+
+function onContextMenu(event: MouseEvent) {
+  event.preventDefault();
+  menu.value?.openAt(event.clientX, event.clientY);
+}
+const recordingNow = computed(() => !!manual.eventId.value);
+const liveRef = shallowRef<InstanceType<typeof LiveVideo> | null>(null);
 
 const SMART_LINGER = 30_000;
 const recentlyActive = shallowRef(false);
@@ -63,7 +89,11 @@ const streamWanted = computed(
   () =>
     activity.enabled.value &&
     !activity.offline.value &&
-    (props.streaming === "continuous" || recentlyActive.value || hovered.value),
+    (props.streaming === "continuous" ||
+      recentlyActive.value ||
+      hovered.value ||
+      !props.muted ||
+      props.showStats),
 );
 const liveShown = shallowRef(false);
 watch(streamWanted, (wanted) => {
@@ -84,12 +114,17 @@ const dotState = computed(() =>
       : "live",
 );
 
-function snapshot() {
-  window.open(
-    `${baseUrl}api/${props.camera.name}/latest.jpg`,
-    "_blank",
-    "noopener",
-  );
+const snapshotBusy = shallowRef(false);
+async function snapshot() {
+  if (snapshotBusy.value) return;
+  snapshotBusy.value = true;
+  try {
+    await saveSnapshot(props.camera.name, {
+      source: liveShown.value ? liveRef.value?.frameSource() : undefined,
+    });
+  } finally {
+    snapshotBusy.value = false;
+  }
 }
 </script>
 
@@ -97,7 +132,8 @@ function snapshot() {
   <article
     class="camera-tile"
     :class="{
-      'has-alert': activity.activeTracking.value,
+      // motion alone lights the border too, as in the previous UI
+      'has-alert': busy,
       'is-offline': activity.offline.value,
     }"
     :style="{ '--aspect': aspect, viewTransitionName: transitionName }"
@@ -108,18 +144,27 @@ function snapshot() {
     @keydown.enter="emit('open')"
     @pointerenter="hovered = true"
     @pointerleave="hovered = false"
+    @contextmenu="onContextMenu"
   >
     <div class="camera-tile__media">
       <CameraStill :camera="camera.name" :active="!liveShown" />
       <div class="camera-tile__live" :class="{ 'is-shown': liveShown }">
         <LiveVideo
           v-if="streamWanted"
+          ref="liveRef"
           :camera="camera"
+          :muted="muted"
           :linger-ms="20_000"
           @frame="liveShown = true"
           @failed="liveShown = false"
         />
       </div>
+      <StreamStats
+        v-if="showStats && liveShown"
+        layer="live"
+        :live-mode="liveRef?.mode"
+        :live-session="liveRef?.session"
+      />
       <div v-if="activity.offline.value" class="camera-tile__offline">
         {{ t("dashboard.offline") }}
       </div>
@@ -139,24 +184,35 @@ function snapshot() {
         />
       </template>
       <template #bottom-end>
-        <OverlayButton :label="t('dashboard.snapshot')" @click="snapshot"
+        <OverlayButton
+          :label="t('dashboard.snapshot')"
+          :disabled="snapshotBusy"
+          @click="snapshot"
           ><Camera
         /></OverlayButton>
         <OverlayButton
-          :label="
-            recordings.on.value
-              ? t('dashboard.recordingOn')
-              : t('dashboard.recordingOff')
-          "
-          :active="recordings.on.value"
+          :label="recordingNow ? t('player.recordStop') : t('player.recordNow')"
+          :active="recordingNow"
           tone="danger"
-          @click="recordings.set(!recordings.on.value)"
+          @click="manual.toggle()"
         >
-          <CircleDot />
+          <CircleStop v-if="recordingNow" />
+          <CircleDot v-else />
         </OverlayButton>
         <OverlayButton :label="t('dashboard.expand')" @click="emit('open')"
           ><Expand
         /></OverlayButton>
+        <TileMenu
+          ref="menu"
+          :camera="camera"
+          :has-audio="audio.audioOutput.value"
+          :muted="muted"
+          :stats="showStats"
+          @update:muted="emit('update:muted', $event)"
+          @update:stats="emit('update:showStats', $event)"
+          @mute-all="emit('muteAll', $event)"
+          @open="emit('open')"
+        />
       </template>
     </CameraOverlay>
   </article>

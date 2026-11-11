@@ -3,14 +3,25 @@
 import { computed } from "vue";
 import { labelIcon, labelTone } from "@/utils/labels";
 
-const props = defineProps<{ label: string; text: string }>();
+const props = withDefaults(
+  defineProps<{ label: string; text: string; size?: "sm" | "md" }>(),
+  { size: "sm" },
+);
 const icon = computed(() => labelIcon(props.label));
 const tone = computed(() => labelTone(props.label));
 </script>
 
 <template>
-  <span class="detection-tag" :class="`tone-${tone}`">
-    <component :is="icon" :size="12" :stroke-width="2.5" aria-hidden="true" />
+  <span
+    class="detection-tag"
+    :class="[`tone-${tone}`, `detection-tag--${size}`]"
+  >
+    <component
+      :is="icon"
+      :size="size === 'md' ? 13 : 12"
+      :stroke-width="2.5"
+      aria-hidden="true"
+    />
     {{ text }}
   </span>
 </template>
@@ -29,6 +40,14 @@ const tone = computed(() => labelTone(props.label));
   backdrop-filter: blur(12px);
   border: 1px solid transparent;
   text-transform: capitalize;
+}
+
+.detection-tag--md {
+  gap: 5px;
+  block-size: 26px;
+  padding-inline: 9px;
+  font-size: var(--text-sm);
+  font-weight: 500;
 }
 
 .tone-person,

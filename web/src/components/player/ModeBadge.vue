@@ -23,7 +23,9 @@ const { t } = useT(["views/app"]);
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 10px;
+  /* same height as the stage's tags and timestamp */
+  block-size: 26px;
+  padding-inline: 10px;
   border-radius: var(--radius-xs);
   font-size: var(--text-xs);
   font-weight: 600;

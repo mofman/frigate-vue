@@ -42,9 +42,12 @@ Legend: `[x]` done, `[ ]` to do, `[~]` partly done (see note).
 - [x] Refcounted live stream pool with linger, park and resume
 - [x] Transport fallback chain MSE > WebRTC > jsmpeg without unmounting
 - [x] HLS recording player that only rebuilds its source when a seek leaves the loaded window
-- [ ] Two-way talk (microphone backchannel over WebRTC)
-- [ ] Recording playback quality picker (main / sub / auto) and playback speed
-- [ ] Player stats overlay
+- [x] Two-way talk (microphone backchannel over WebRTC)
+- [x] Playback speed, volume, snapshot and picture in picture on the recording bar
+- [ ] Recording playback quality picker (main / sub / auto)
+- [x] Player stats overlay
+- [x] Record now (on demand event), snapshot download, admin camera switches in the settings menu
+- [ ] Live transcription overlay
 
 ## Phase 4: Dashboard
 
@@ -53,7 +56,9 @@ Legend: `[x]` done, `[ ]` to do, `[~]` partly done (see note).
 - [x] Tile overlay: status dot, name, clock, detection chips, snapshot / record / expand
 - [x] Recent activity panel, becomes a thumbnail strip on tablets
 - [x] Tile expands into the camera view with a View Transition, reusing its live stream
-- [ ] Camera groups
+- [x] Camera groups (picker, ?group= links, admin create / edit / delete)
+- [x] Tile menu: camera power, tile audio, stats, notification snoozing
+- [ ] Drag to reorder groups and tiles
 - [ ] Birdseye tile
 - [ ] Drag to reorder / custom layouts
 
@@ -73,9 +78,11 @@ Legend: `[x]` done, `[ ]` to do, `[~]` partly done (see note).
 - [x] Keyboard: space, left / right arrows, L for live, F for fullscreen
 - [x] Stage controls: play / pause / skip, jump to live, detect / record / snapshot toggles, mute, stream picker, low bandwidth, background play, fullscreen
 - [~] Camera strip shows refreshing stills; showing the other cameras at the same recorded time is still to do
-- [ ] Date picker to jump beyond the last 24 hours
-- [ ] Export and share-timestamp actions
-- [ ] PTZ controls
+- [x] Date range beyond the last 24 hours
+- [x] Export and share-timestamp actions
+- [x] Timeline / Events / Detail side panel
+- [ ] Debug replay
+- [x] PTZ controls (pad, presets, click and box zoom, keyboard)
 - [ ] Pinch / wheel zoom on the stage
 
 ## Phase 6: Review
@@ -84,7 +91,7 @@ Legend: `[x]` done, `[ ]` to do, `[~]` partly done (see note).
 - [x] Camera filter, show reviewed toggle, mark all reviewed
 - [x] Cards grouped by day with hover preview clips and infinite scroll
 - [x] Opening a card plays it in the camera view
-- [ ] Label and zone filters
+- [x] Label and zone filters (camera view and dashboard activity)
 - [ ] Motion review tab
 - [ ] Multi-select with bulk actions
 

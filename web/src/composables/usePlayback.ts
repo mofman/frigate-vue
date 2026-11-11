@@ -21,6 +21,8 @@ export function usePlayback(
   /** wall clock time of what is on screen (live: now) */
   const time = shallowRef(options.initialTime ?? now());
   const playing = shallowRef(true);
+  /** recorded playback speed, back to 1x whenever we return to live */
+  const rate = shallowRef(1);
   const scrubbing = shallowRef(false);
   const scrubTime = shallowRef(time.value);
   /** newest recorded instant reported by the recording player */
@@ -43,6 +45,7 @@ export function usePlayback(
     scrubbing.value = false;
     mode.value = "live";
     playing.value = true;
+    rate.value = 1;
     time.value = now();
   }
 
@@ -86,6 +89,10 @@ export function usePlayback(
     playing.value = value;
   }
 
+  function setRate(value: number) {
+    rate.value = value;
+  }
+
   /** Recorded media ran out at the window end. */
   function reportEnded() {
     // caught up with the edge of recordings, the natural next frame is live
@@ -97,6 +104,7 @@ export function usePlayback(
     mode: readonly(mode),
     time: readonly(time),
     playing: readonly(playing),
+    rate: readonly(rate),
     scrubbing: readonly(scrubbing),
     scrubTime: readonly(scrubTime),
     seekRequest: readonly(seekRequest),
@@ -115,6 +123,7 @@ export function usePlayback(
     reportTime,
     reportEnded,
     setPlaying,
+    setRate,
   };
 }
 

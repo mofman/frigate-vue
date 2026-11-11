@@ -8,7 +8,7 @@ import { computed, onBeforeUnmount, shallowRef, watch, watchEffect } from "vue";
 import { leaseLive, type Lease } from "@/players/pool";
 import type { LiveMode, LiveSession, LiveStatus } from "@/players/session";
 import { chooseStream } from "@/players/streams";
-import { iceServersFromConfig } from "@/players/webrtc";
+import { iceServersFromConfig, WebRtcSession } from "@/players/webrtc";
 import { useConfig } from "@/composables/useFrigate";
 import type { CameraConfig } from "@/types/frigate";
 
@@ -23,6 +23,10 @@ const props = withDefaults(
     preferredStream?: string;
     lowBandwidth?: boolean;
     background?: boolean;
+    /** 0 to 1, applied when unmuted */
+    volume?: number;
+    /** send the microphone to the camera, forces WebRTC */
+    talk?: boolean;
     /** how long the connection survives after release */
     lingerMs?: number;
   }>(),
@@ -33,6 +37,8 @@ const props = withDefaults(
     preferredStream: undefined,
     lowBandwidth: false,
     background: false,
+    volume: 1,
+    talk: false,
     lingerMs: undefined,
   },
 );
@@ -41,6 +47,8 @@ const emit = defineEmits<{
   /** a frame was presented after connecting or resuming */
   frame: [];
   failed: [];
+  /** talk was requested but the microphone was refused */
+  talkFailed: [];
 }>();
 
 const { data: config } = useConfig();
@@ -54,6 +62,7 @@ const choice = computed(() =>
     ? chooseStream(props.camera, config.value, {
         preferredStream: props.preferredStream,
         lowBandwidth: props.lowBandwidth,
+        talk: props.talk,
       })
     : undefined,
 );
@@ -61,6 +70,8 @@ const choice = computed(() =>
 const mode = computed<LiveMode | undefined>(
   () => choice.value?.modes[attempt.value],
 );
+
+const talking = computed(() => props.talk && mode.value === "webrtc");
 
 function release() {
   if (!lease) return;
@@ -73,7 +84,7 @@ function release() {
 watch(
   () =>
     props.enabled && choice.value && mode.value
-      ? `${mode.value}|${choice.value.stream}|${props.camera.name}`
+      ? `${mode.value}|${choice.value.stream}|${props.camera.name}|${talking.value}`
       : null,
   (identity) => {
     release();
@@ -83,6 +94,7 @@ watch(
       mode: mode.value,
       stream: choice.value.stream,
       camera: props.camera.name,
+      talk: talking.value,
       iceServers: iceServersFromConfig(
         config.value?.go2rtc.webrtc?.ice_servers,
       ),
@@ -95,8 +107,14 @@ watch(
 
 // a new camera or stream restarts the fallback chain
 watch(
-  () => `${props.camera.name}|${props.preferredStream}|${props.lowBandwidth}`,
+  () =>
+    `${props.camera.name}|${props.preferredStream}|${props.lowBandwidth}|${props.talk}`,
   () => (attempt.value = 0),
+);
+
+watch(
+  () => session.value instanceof WebRtcSession && session.value.micDenied.value,
+  (denied) => denied && emit("talkFailed"),
 );
 
 // mount the leased element into our container
@@ -122,6 +140,7 @@ watch(
 );
 
 watchEffect(() => session.value?.setMuted(props.muted));
+watchEffect(() => session.value?.setVolume(props.volume));
 
 watch(
   () => session.value?.firstFrameAt.value,
@@ -155,7 +174,13 @@ function frameSource(): HTMLVideoElement | HTMLCanvasElement | undefined {
   return el.querySelector("canvas") ?? undefined;
 }
 
-defineExpose({ status, resolution, frameSource, mode });
+/** The live media element when it is a video (not jsmpeg's canvas). */
+function videoElement(): HTMLVideoElement | undefined {
+  const el = session.value?.element;
+  return el instanceof HTMLVideoElement ? el : undefined;
+}
+
+defineExpose({ status, resolution, frameSource, videoElement, mode, session });
 </script>
 
 <template>

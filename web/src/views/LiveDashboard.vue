@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /** Camera dashboard: every camera at once with recent activity alongside. */
-import { computed, nextTick, onMounted, shallowRef } from "vue";
-import { useRouter } from "vue-router";
+import { computed, nextTick, onMounted, shallowRef, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import CameraGroupPicker from "@/components/camera/CameraGroupPicker.vue";
 import { LayoutGrid, Maximize2, Minimize2, Rows3 } from "@lucide/vue";
 import PageHeader from "@/components/layout/PageHeader.vue";
 import CameraGrid from "@/components/camera/CameraGrid.vue";
@@ -13,6 +14,7 @@ import IconButton from "@/components/ui/IconButton.vue";
 import SegmentedToggle from "@/components/ui/SegmentedToggle.vue";
 import {
   useCameras,
+  useConfig,
   useStats,
   isCameraOffline,
 } from "@/composables/useFrigate";
@@ -21,8 +23,52 @@ import { useT } from "@/composables/useT";
 
 const { t } = useT(["views/app"]);
 const router = useRouter();
+const route = useRoute();
 const cameras = useCameras();
 const stats = useStats();
+const { data: config } = useConfig();
+
+// ---- camera group: remembered, and shareable through ?group= ---------------
+
+const savedGroup = usePersistedRef("camera-group", "default");
+if (typeof route.query.group === "string" && route.query.group)
+  savedGroup.value = route.query.group;
+const group = computed({
+  get: () =>
+    savedGroup.value !== "default" &&
+    config.value &&
+    !config.value.camera_groups?.[savedGroup.value]
+      ? "default"
+      : savedGroup.value,
+  set: (value: string) => (savedGroup.value = value),
+});
+watch(
+  group,
+  (value) => {
+    const current = route.query.group;
+    if ((value === "default" && !current) || current === value) return;
+    const { group: _drop, ...rest } = route.query;
+    void router.replace({
+      query: value === "default" ? rest : { ...rest, group: value },
+    });
+  },
+  { immediate: true },
+);
+
+// ---- per tile audio and stats ------------------------------------------------
+
+const tileAudio = usePersistedRef<Record<string, boolean>>("tile-audio", {});
+const tileStats = shallowRef<Record<string, boolean>>({});
+
+function setTileAudio(camera: string, unmuted: boolean) {
+  tileAudio.value = { ...tileAudio.value, [camera]: unmuted };
+}
+
+function setAllAudio(muted: boolean) {
+  tileAudio.value = Object.fromEntries(
+    dashboardCameras.value.map((camera) => [camera.name, !muted]),
+  );
+}
 
 const layout = usePersistedRef<"grid" | "list">("dashboard-layout", "grid");
 const streaming = usePersistedRef<"smart" | "continuous">(
@@ -36,9 +82,15 @@ const liveCount = computed(
       (camera) => camera.enabled && !isCameraOffline(stats.value, camera.name),
     ).length,
 );
-const dashboardCameras = computed(() =>
-  cameras.value.filter((camera) => camera.ui.dashboard !== false),
-);
+const dashboardCameras = computed(() => {
+  const members =
+    group.value === "default"
+      ? undefined
+      : config.value?.camera_groups?.[group.value]?.cameras;
+  return cameras.value.filter((camera) =>
+    members ? members.includes(camera.name) : camera.ui.dashboard !== false,
+  );
+});
 
 const root = shallowRef<HTMLElement | null>(null);
 const { isFullscreen, supported, toggle } = useFullscreen(root);
@@ -74,6 +126,7 @@ async function open(name: string) {
   <div ref="root" class="dashboard">
     <PageHeader :title="t('dashboard.title')">
       <template #meta>
+        <CameraGroupPicker v-model="group" />
         <CountPill>{{
           t("dashboard.liveCount", { count: liveCount })
         }}</CountPill>
@@ -131,6 +184,13 @@ async function open(name: string) {
           :transition-name="
             expanding === camera.name ? 'camera-stage' : undefined
           "
+          :muted="!tileAudio[camera.name]"
+          :show-stats="!!tileStats[camera.name]"
+          @update:muted="setTileAudio(camera.name, !$event)"
+          @update:show-stats="
+            tileStats = { ...tileStats, [camera.name]: $event }
+          "
+          @mute-all="setAllAudio"
           @open="open(camera.name)"
         />
       </CameraGrid>
