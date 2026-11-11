@@ -186,6 +186,8 @@ const duration = computed(() =>
 
 .review-card__media {
   position: relative;
+  /* the thumbnail keeps its 16:9 even when the card is squeezed */
+  flex-shrink: 0;
   aspect-ratio: 16 / 9;
   background: var(--bg-media);
   overflow: hidden;

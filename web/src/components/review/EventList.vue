@@ -59,6 +59,9 @@ async function toggleReviewed(review: ReviewSegment) {
 .event-list {
   display: grid;
   align-content: start;
+  /* rows keep their full height; in this fixed height scroller the grid
+     would otherwise shrink them, squashing each card's thumbnail */
+  grid-auto-rows: max-content;
   gap: 12px;
   padding: 12px;
   overflow-y: auto;

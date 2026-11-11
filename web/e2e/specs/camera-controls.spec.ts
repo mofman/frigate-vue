@@ -154,6 +154,39 @@ test.describe("camera stage controls", () => {
     await expect(page.locator(".timeline")).toBeVisible();
   });
 
+  test("event cards keep their thumbnail when the list overflows", async ({
+    frigateApp,
+  }) => {
+    const page = frigateApp.page;
+    // more events than fit in the panel, so the list has to scroll
+    const now = Date.now() / 1000;
+    const reviews = Array.from({ length: 12 }, (_, index) => ({
+      id: `overflow-${index}`,
+      camera: "front_door",
+      start_time: now - 600 * (index + 1),
+      end_time: now - 600 * (index + 1) + 30,
+      has_been_reviewed: false,
+      severity: "alert",
+      thumb_path: `/clips/front_door/overflow-${index}-thumb.jpg`,
+      data: {
+        audio: [],
+        detections: [],
+        objects: ["person"],
+        sub_labels: [],
+        significant_motion_areas: [],
+        zones: [],
+      },
+    }));
+    await frigateApp.installDefaults({ reviews });
+    await frigateApp.goto("/camera/front_door");
+    await page.getByRole("radio", { name: "Events" }).click();
+    const media = page.locator(".event-list .review-card__media").first();
+    await expect(media).toBeVisible();
+    const box = await media.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width / box!.height).toBeCloseTo(16 / 9, 1);
+  });
+
   test("filter and range change the review query", async ({ frigateApp }) => {
     const page = frigateApp.page;
     const urls: string[] = [];
