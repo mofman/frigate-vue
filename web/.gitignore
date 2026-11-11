@@ -26,4 +26,4 @@ test-results
 *.njsproj
 *.sln
 *.sw?
-.env
+.enve2e/.media

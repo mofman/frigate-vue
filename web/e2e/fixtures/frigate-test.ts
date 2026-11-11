@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 /**
  * Extended Playwright test fixture with FrigateApp.
  *
@@ -12,7 +11,7 @@
  * fail the test in the fixture's teardown.
  *
  * CRITICAL: All route/WS handlers are registered before page.goto()
- * to prevent AuthProvider from redirecting to login.html.
+ * to prevent the auth bootstrap from redirecting to /login.
  */
 
 import { test as base, expect, type Page } from "@playwright/test";

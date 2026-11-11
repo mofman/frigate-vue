@@ -1,44 +1,38 @@
-import path from "node:path";
-import js from "@eslint/js";
-import { defineConfig, globalIgnores, includeIgnoreFile } from "eslint/config";
-import prettierRecommended from "eslint-plugin-prettier/recommended";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
-import globals from "globals";
-import tseslint from "typescript-eslint";
+import pluginVue from "eslint-plugin-vue";
+import {
+  defineConfigWithVueTs,
+  vueTsConfigs,
+} from "@vue/eslint-config-typescript";
 
-export default defineConfig([
-  includeIgnoreFile(path.join(import.meta.dirname, ".gitignore")),
-  globalIgnores(["src/components/ui/", "**/*.d.ts", "**/*.cjs", "**/*.mjs"]),
-  js.configs.recommended,
-  tseslint.configs.recommended,
-  prettierRecommended,
+export default defineConfigWithVueTs(
   {
-    languageOptions: {
-      globals: { ...globals.browser, ...globals.node },
-    },
-    plugins: {
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
-    },
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "playwright-report/**",
+      "test-results/**",
+      "public/**",
+      "e2e/fixtures/mock-data/**",
+    ],
+  },
+  pluginVue.configs["flat/recommended"],
+  vueTsConfigs.recommended,
+  {
     rules: {
-      "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "error",
-      "react-refresh/only-export-components": [
-        "warn",
-        { allowConstantExport: true },
-      ],
-      "no-unused-vars": "off",
+      "no-console": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
         "error",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
-        },
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      "no-console": "error",
-      "prettier/prettier": "warn",
+      "comma-dangle": ["error", "always-multiline"],
+      // Prettier owns formatting, these rules fight it
+      "vue/max-attributes-per-line": "off",
+      "vue/singleline-html-element-content-newline": "off",
+      "vue/multiline-html-element-content-newline": "off",
+      "vue/html-self-closing": "off",
+      "vue/html-indent": "off",
+      "vue/html-closing-bracket-newline": "off",
     },
   },
-]);
+);

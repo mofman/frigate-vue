@@ -121,8 +121,17 @@ export class ApiMocker {
     await this.page.route(/\/api\/review\/summary/, (route) =>
       route.fulfill({ json: reviewSummary }),
     );
+    // the generator serializes review times as ISO strings, the real api
+    // returns unix seconds
+    const toEpoch = (value: unknown) =>
+      typeof value === "string" ? Date.parse(value) / 1000 : value;
+    const reviewRows = (reviews as Record<string, unknown>[]).map((row) => ({
+      ...row,
+      start_time: toEpoch(row.start_time),
+      end_time: toEpoch(row.end_time),
+    }));
     await this.page.route(/\/api\/review(\?|$)/, (route) =>
-      route.fulfill({ json: reviews }),
+      route.fulfill({ json: reviewRows }),
     );
 
     // Export jobs. The Exports page polls this every 2s while any export

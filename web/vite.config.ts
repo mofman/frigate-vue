@@ -1,11 +1,11 @@
-import path, { resolve } from "path";
+/// <reference types="vitest/config" />
+import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import monacoEditorPlugin from "vite-plugin-monaco-editor";
+import vue from "@vitejs/plugin-vue";
 
+// Point the dev server at a Frigate instance, eg PROXY_HOST=192.168.1.10:5000
 const proxyHost = process.env.PROXY_HOST || "localhost:5000";
 
-// https://vitejs.dev/config/
 export default defineConfig({
   server: {
     proxy: {
@@ -28,31 +28,19 @@ export default defineConfig({
       },
       "/live": {
         target: `ws://${proxyHost}`,
+        changeOrigin: true,
         ws: true,
       },
     },
   },
-  build: {
-    rolldownOptions: {
-      input: {
-        main: resolve(import.meta.dirname, "index.html"),
-        login: resolve(import.meta.dirname, "login.html"),
-      },
-      output: {
-        keepNames: true,
-      },
-    },
-  },
-  plugins: [
-    react(),
-    monacoEditorPlugin.default({
-      customWorkers: [{ label: "yaml", entry: "monaco-yaml/yaml.worker" }],
-      languageWorkers: ["editorWorkerService"], // we don't use any of the default languages
-    }),
-  ],
+  plugins: [vue()],
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "./src"),
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
+  },
+  test: {
+    include: ["src/**/*.test.ts"],
+    environment: "node",
   },
 });

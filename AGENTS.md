@@ -7,7 +7,7 @@ This document provides coding guidelines and best practices for contributing to 
 Frigate NVR is a realtime object detection system for IP cameras that uses:
 
 - **Backend**: Python 3.13+ with FastAPI, OpenCV, TensorFlow/ONNX
-- **Frontend**: React with TypeScript, Vite, TailwindCSS
+- **Frontend**: Vue 3 with TypeScript, Vite and modern CSS
 - **Architecture**: Multiprocessing design with ZMQ and MQTT communication
 - **Focus**: Minimal resource usage with maximum performance
 
@@ -16,7 +16,7 @@ Frigate NVR is a realtime object detection system for IP cameras that uses:
 When reviewing code, do NOT comment on:
 
 - Missing imports - Static analysis tooling catches these
-- Code formatting - Ruff (Python) and Prettier (TypeScript/React) handle formatting
+- Code formatting - Ruff (Python) and Prettier (TypeScript/Vue) handle formatting
 - Minor style inconsistencies already enforced by linters
 
 ## Python Backend Standards
@@ -139,57 +139,64 @@ When reviewing code, do NOT comment on:
 - **Events**: `frigate/events/` - Event management and storage
 - **Utilities**: `frigate/util/` - Shared utility functions
 
-## Frontend (React/TypeScript) Standards
+## Frontend (Vue/TypeScript) Standards
+
+The frontend in `web/` is Vue 3 (`<script setup lang="ts">`), Vite and plain
+modern CSS. There is no CSS framework and no UI kit.
 
 ### Internationalization (i18n)
 
 - **CRITICAL**: Never write user-facing strings directly in components
-- **Always use react-i18next**: Import and use the `t()` function
+- **Always use the `useT()` composable** (i18next under the hood, reusing the existing locale files)
 
-  ```tsx
-  import { useTranslation } from "react-i18next";
+  ```vue
+  <script setup lang="ts">
+  import { useT } from "@/composables/useT";
 
-  function MyComponent() {
-    const { t } = useTranslation(["views/live"]);
-    return <div>{t("camera_not_found")}</div>;
-  }
+  const { t } = useT(["views/app"]);
+  </script>
+
+  <template>
+    <p>{{ t("camera.notFound") }}</p>
+  </template>
   ```
 
-- **Translation Files**: Add English strings to the appropriate json files in `web/public/locales/en`
-- **Namespaces**: Organize translations by feature/view (e.g., `views/live`, `common`, `views/system`)
+- **Translation Files**: Add English strings to `web/public/locales/en`. Strings for the core screens live in `views/app.json`
+- **Other namespaces**: Prefix the key, eg `t("objects:person")` or `t("views/events:alerts")`
+- **Check**: `npm run i18n:check` fails when a key used in `src` is missing from the English files
 
-### Code Quality
+### Styling
 
-- **Linting**: ESLint (see `web/eslint.config.js`)
-- **Formatting**: Prettier with Tailwind CSS plugin
-- **Type Safety**: TypeScript strict mode enabled
+- **Scoped CSS** in every component (`<style scoped>`), using native nesting
+- **Design tokens only**: colors, radii, shadows and type sizes come from `web/src/styles/tokens.css`. Never put raw hex or rgb values in a `.vue` file; add a token instead
+- **Modern CSS is preferred over JavaScript**: container queries, `:has()`, `aspect-ratio`, `color-mix()`, the Popover API and `@starting-style`
+- **`:deep()` must not be nested** inside another rule. Vue's scoped compiler mistranslates nested `:deep()`, so write it as a flat rule such as `.parent :deep(svg) {}`
 
 ### Component Patterns
 
-- **UI Components**: Use Radix UI primitives (in `web/src/components/ui/`)
-- **Styling**: TailwindCSS with `cn()` utility for class merging
-- **State Management**: React hooks (useState, useEffect, useCallback, useMemo)
-- **Data Fetching**: Custom hooks with proper loading and error states
+- **Reusable components**: `web/src/components/{ui,layout,camera,player,timeline,review}`
+- **Views**: `web/src/views/` are route components that compose those pieces
+- **State**: Vue reactivity and composables in `web/src/composables/`
+- **Data fetching**: `useQuery()` from `web/src/api/query.ts`. It keeps the previous data while a key changes, so views never blank
+- **Websocket**: `useWsTopic()` and `onWsMessage()` from `web/src/api/ws.ts`
+- **Media**: player logic lives in framework-free modules in `web/src/players/`. Components lease live sessions from the pool (`players/pool.ts`) and never create players directly
 
-### ESLint Rules
+### Code Quality
 
-Key rules enforced:
-
-- `react-hooks/rules-of-hooks`: error
-- `react-hooks/exhaustive-deps`: error
-- `no-console`: error (use proper logging or remove)
-- `@typescript-eslint/no-explicit-any`: warn (always use proper types instead of `any`)
-- Unused variables must be prefixed with `_`
-- Comma dangles required for multiline objects/arrays
+- **Linting**: ESLint with `eslint-plugin-vue` and `typescript-eslint` (see `web/eslint.config.js`)
+- **Type checking**: `vue-tsc --noEmit`, strict mode
+- **Formatting**: Prettier
+- **Rules**: `no-console` is an error. Unused variables must be prefixed with `_`. Avoid `any`
 
 ### File Organization
 
-- **Pages**: `web/src/pages/` - Route components
-- **Views**: `web/src/views/` - Complex view components
-- **Components**: `web/src/components/` - Reusable components
-- **Hooks**: `web/src/hooks/` - Custom React hooks
-- **API**: `web/src/api/` - API client functions
-- **Types**: `web/src/types/` - TypeScript type definitions
+- **Views**: `web/src/views/`: route components
+- **Components**: `web/src/components/`: reusable components
+- **Composables**: `web/src/composables/`: shared reactive logic
+- **Players**: `web/src/players/`: live and recorded playback, framework free
+- **API**: `web/src/api/`: http, query cache and websocket
+- **Types**: `web/src/types/`: TypeScript type definitions
+- **Roadmap**: `web/TODO.md` tracks the rebuild and the pages still to port
 
 ## Testing Requirements
 
@@ -275,10 +282,10 @@ npm run e2e:build && npm run e2e
 npm run e2e:ui
 
 # E2E: run a specific spec
-npx playwright test --config e2e/playwright.config.ts e2e/specs/live.spec.ts
+npx playwright test --config e2e/playwright.config.ts e2e/specs/camera.spec.ts
 
 # E2E: filter by name, or run only desktop/mobile
-npx playwright test --config e2e/playwright.config.ts --grep="severity tab"
+npx playwright test --config e2e/playwright.config.ts --grep="seamless"
 npx playwright test --config e2e/playwright.config.ts --project=desktop
 
 # E2E: regenerate mock data after backend model changes (from repo root)
@@ -290,11 +297,12 @@ PYTHONPATH=. python3 web/e2e/fixtures/mock-data/generate-mock-data.py
 # re-run this script. (from repo root)
 python3 generate_config_translations.py
 
-# Extract i18n keys from source into the locale files after adding
-# new t() calls. Use the :ci variant to verify the locale files are
-# in sync with source (fails if extraction would change anything).
-npm run i18n:extract
-npm run i18n:extract:ci
+# Verify every t() key used in src exists in the English locale files
+npm run i18n:check
+
+# Type check and unit tests
+npm run typecheck
+npm run test:run
 ```
 
 ### Docker Development
@@ -358,8 +366,8 @@ events = (
 data = requests.get(url)  # ❌ Use async HTTP client
 time.sleep(5)  # ❌ Use asyncio.sleep()
 
-# Hardcoded strings in React components
-<div>Camera not found</div>  # ❌ Use t("camera_not_found")
+# Hardcoded strings in Vue templates
+<p>Camera not found</p>  # ❌ Use t("camera.notFound")
 
 # Missing error handling
 data = await api.get_data()  # ❌ No exception handling
@@ -388,9 +396,9 @@ async with aiohttp.ClientSession() as session:
 
 await asyncio.sleep(5)  # ✅ Non-blocking
 
-# Translatable strings in React
-const { t } = useTranslation();
-<div>{t("camera_not_found")}</div>  # ✅ Translatable
+# Translatable strings in Vue
+const { t } = useT(["views/app"]);
+<p>{{ t("camera.notFound") }}</p>  # ✅ Translatable
 
 # Proper error handling
 try:

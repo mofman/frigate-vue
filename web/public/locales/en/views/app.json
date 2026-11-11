@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "primary": "Main navigation",
+    "home": "Frigate home",
+    "cameras": "Cameras",
+    "review": "Review",
+    "explore": "Explore",
+    "exports": "Exports",
+    "settings": "Settings",
+    "account": "Account",
+    "back": "Back",
+    "comingSoon": "Not yet available in the new interface"
+  },
+  "account": {
+    "signedInAs": "Signed in as",
+    "anonymous": "Anonymous",
+    "logout": "Log out"
+  },
+  "status": {
+    "cpu": "CPU",
+    "gpu": "GPU",
+    "storage": "Storage",
+    "uptime": "Uptime",
+    "healthy": "System healthy",
+    "storageLow": "Storage nearly full",
+    "camerasOffline_one": "{{count}} camera offline",
+    "camerasOffline_other": "{{count}} cameras offline"
+  },
+  "dashboard": {
+    "title": "Cameras",
+    "liveCount": "{{count}} live",
+    "layout": "Layout",
+    "fitAll": "Fit all cameras",
+    "list": "Scrolling list",
+    "streaming": "Streaming",
+    "smartStreaming": "Smart",
+    "continuousStreaming": "Always",
+    "noCameras": "No cameras are configured",
+    "openCamera": "Open {{camera}}",
+    "offline": "Offline",
+    "snapshot": "Open snapshot",
+    "recordingOn": "Recording is on",
+    "recordingOff": "Recording is off",
+    "expand": "Expand",
+    "recentActivity": "Recent Activity",
+    "filterEvents": "Filter events",
+    "allCaughtUp": "You're all caught up",
+    "viewAll": "View all events"
+  },
+  "activity": {
+    "count": "{{count}} {{label}}",
+    "motion": "Motion"
+  },
+  "camera": {
+    "notFound": "Camera not found"
+  },
+  "player": {
+    "live": "Live",
+    "liveFeed": "Live Feed",
+    "recording": "Recording",
+    "scrubbing": "Scrubbing",
+    "loading": "Loading",
+    "noRecordings": "No recordings for this time",
+    "recordingError": "Recordings could not be loaded",
+    "liveError": "The live stream could not be started",
+    "jumpToLive": "Live",
+    "play": "Play",
+    "pause": "Pause",
+    "back10": "Back 10 seconds",
+    "forward10": "Forward 10 seconds",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit fullscreen",
+    "settings": "Stream settings",
+    "stream": "Stream",
+    "playback": "Playback",
+    "lowBandwidth": "Low bandwidth mode",
+    "playInBackground": "Keep playing in background"
+  },
+  "features": {
+    "detectOn": "Detection is on",
+    "detectOff": "Detection is off",
+    "recordOn": "Recording is on",
+    "recordOff": "Recording is off",
+    "snapshotsOn": "Snapshots are on",
+    "snapshotsOff": "Snapshots are off"
+  },
+  "timeline": {
+    "label": "Timeline",
+    "live": "Live"
+  },
+  "review": {
+    "title": "Review",
+    "showReviewed": "Show reviewed",
+    "markAllReviewed": "Mark all as reviewed",
+    "markReviewed": "Mark as reviewed",
+    "markUnreviewed": "Mark as unreviewed",
+    "camerasSelected": "{{count}} cameras",
+    "inProgress": "In progress",
+    "open": "Open {{camera}} at {{time}}"
+  },
+  "login": {
+    "title": "Sign in to Frigate",
+    "user": "Username",
+    "password": "Password",
+    "submit": "Sign in",
+    "invalid": "Incorrect username or password",
+    "rateLimited": "Too many attempts, try again shortly",
+    "failed": "Sign in failed, please try again"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "home": "Back to cameras"
+  }
+}

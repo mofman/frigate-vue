@@ -1,7 +1,9 @@
 import { execSync } from "child_process";
 import path from "path";
+import { generateMedia } from "./scripts/generate-media.mjs";
 
 export default function globalSetup() {
   const webDir = path.resolve(__dirname, "..");
   execSync("npm run e2e:build", { cwd: webDir, stdio: "inherit" });
+  generateMedia();
 }
