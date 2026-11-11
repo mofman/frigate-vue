@@ -12,7 +12,19 @@ export type CameraConfig = {
   record: { enabled: boolean; enabled_in_config: boolean };
   snapshots: { enabled: boolean };
   live: { height: number; quality: number; streams: Record<string, string> };
-  audio_transcription?: { enabled_in_config: boolean; live_enabled?: boolean };
+  audio_transcription?: {
+    enabled?: boolean;
+    enabled_in_config: boolean;
+    live_enabled?: boolean;
+  };
+  ffmpeg?: {
+    hwaccel_args?: string | string[];
+    inputs: {
+      path: string;
+      roles: string[];
+      hwaccel_args?: string | string[];
+    }[];
+  };
   notifications?: { enabled: boolean; enabled_in_config: boolean };
   objects?: { track: string[] };
   zones?: Record<string, unknown>;
@@ -49,6 +61,28 @@ export type FrigateConfig = {
   };
   proxy?: { logout_url?: string };
   model?: { attributes_map?: Record<string, string[]> };
+  /** true when the config failed validation and Frigate started without it */
+  safe_mode?: boolean;
+  /** detection models, each running on one or more devices */
+  models?: DetectionModelConfig[];
+  semantic_search?: {
+    enabled: boolean;
+    model?: string;
+    model_size?: "small" | "large";
+    device?: string | null;
+  };
+  face_recognition?: { enabled: boolean; device?: string | null };
+  lpr?: { enabled: boolean; device?: string | null };
+  audio_transcription?: {
+    enabled: boolean;
+    model?: string;
+    device?: string | null;
+  };
+};
+
+export type DetectionModelConfig = {
+  scene?: string;
+  devices: string[];
 };
 
 export type UserProfile = {
@@ -172,18 +206,7 @@ export type Preview = {
   end: number;
 };
 
-export type StorageStats = { free: number; total: number; used: number };
-
-export type FrigateStats = {
-  cameras: Record<string, { camera_fps: number; detection_fps: number }>;
-  cpu_usages: Record<string, { cpu: string; mem: string }>;
-  gpu_usages?: Record<string, { gpu: string; mem: string }>;
-  service: {
-    uptime: number;
-    version: string;
-    storage: Record<string, StorageStats>;
-  };
-};
+export type { FrigateStats, StorageStats } from "./stats";
 
 export type Go2rtcStream = {
   producers?: { url?: string; medias?: string[] }[];

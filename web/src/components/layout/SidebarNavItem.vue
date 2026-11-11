@@ -9,6 +9,8 @@ defineProps<{
   badge?: number;
   disabled?: boolean;
   disabledHint?: string;
+  /** highlight a button entry, eg while its menu is open */
+  active?: boolean;
 }>();
 </script>
 
@@ -40,6 +42,7 @@ defineProps<{
     v-else
     type="button"
     class="nav-item"
+    :class="{ 'is-active': active }"
     :disabled="disabled"
     :title="disabled ? disabledHint : label"
   >

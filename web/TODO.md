@@ -117,16 +117,42 @@ Legend: `[x]` done, `[ ]` to do, `[~]` partly done (see note).
 - [ ] Phone layout: tab bar, stage, timeline, review cards
 - [ ] Behind auth (port 8971): login, redirect back, logout
 
+## Phase 9: Admin pages (system, logs, config editor)
+
+Reached from the account menu (admins only); the status bar chips link to
+the matching System tab. All three routes are admin only and lazy loaded.
+
+- [x] Account menu: Health and Metrics, Logs, Configuration Editor, Restart Frigate
+- [x] Restart: confirm dialog, then a waiting overlay that polls `/api/version` and reloads (60s fallback)
+- [x] Status bar CPU / GPU / storage chips and the health label link to `/system#general`, `#storage`, `#health`
+- [x] Admin route guard (`meta.admin`), viewers go back to the dashboard
+- [x] Config editor on CodeMirror 6: YAML highlighting from the code tokens, schema validation / hover / completion (`codemirror-json-schema`), Mod-S saves
+- [x] Save, Save and restart, Copy; the server's validation message shows above the editor; safe mode validates on load
+- [x] Unsaved changes guard (route leave and tab close)
+- [x] Config editor chunk kept lean: the schema library's markdown-it + shiki renderer is swapped for `components/config/schemaMarkdown.ts` in `vite.config.ts` (about 220 kB gzip, lazy, was 300)
+- [x] System tabs in the URL hash, visited tabs stay mounted, live points from the `stats` topic on top of `/stats/history`
+- [x] Own SVG charts (`components/charts`): threshold bars, multi line chart with hover readout, usage bar. No chart library
+- [x] General: detectors, GPUs / NPUs, other processes; vainfo / nvidia-smi dialog
+- [x] Storage: recordings, cache and shm, shm frame lifetime and size warning, per camera table with main / sub stream split
+- [x] Cameras: overall and per camera fps and CPU, connection quality, ffprobe dialog
+- [x] Enrichments: inference time and rate per enrichment
+- [x] Health: registry notices (acknowledge, mute, hidden list, show all again, severity filter) and the hardware pane (detection, hwaccel, enrichments, camera connections, re-check)
+- [x] Logs: frigate / go2rtc / nginx in the hash, last 200 lines then a live stream, older lines on scroll up, level filter, copy, download, line details
+- [ ] Health: browser side config checks (needs the settings form section configs ported first)
+- [ ] Health: stream checks (ffprobe every camera, needs the camera wizard stream rules)
+- [ ] Cameras: keyframe analysis in the probe dialog
+- [ ] Logs: websocket message feed tab
+- [ ] Status bar notices summary (the old bar listed active notices)
+
 ## Backlog: pages not yet rebuilt
 
 These were removed with the React app and can be recovered from git history
-(`git show <commit>:web/src/...`). They show as disabled items in the sidebar.
+(`git show 8d4e6b52d:web/src/...` is the last commit with the React app).
+Those with a sidebar slot show as disabled items until they land.
 
 - [ ] Explore (search, tracked object details, semantic search)
 - [ ] Exports
 - [ ] Settings (UI settings, camera settings, masks / zones, users, notifications, enrichments)
-- [ ] Config editor
-- [ ] System metrics and logs
 - [ ] Face library, classification models
 - [ ] Chat
 - [ ] Debug replay, motion search

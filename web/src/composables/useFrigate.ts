@@ -2,6 +2,7 @@
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { useQuery } from "@/api/query";
 import { useWsTopic } from "@/api/ws";
+import { resolveTimezone } from "@/utils/time";
 import type {
   CameraConfig,
   FrigateConfig,
@@ -72,4 +73,17 @@ export function isCameraOffline(
 ) {
   if (!stats?.cameras) return false;
   return stats.cameras[camera]?.camera_fps === 0 && stats.service.uptime > 60;
+}
+
+/** Timezone and 12/24 hour choice from ui config, for the time helpers. */
+export function useTimeOptions() {
+  const { data: config } = useConfig();
+  return computed(() => {
+    const format = config.value?.ui?.time_format;
+    return {
+      timezone: resolveTimezone(config.value?.ui?.timezone),
+      hour12:
+        format === "12hour" ? true : format === "24hour" ? false : undefined,
+    };
+  });
 }

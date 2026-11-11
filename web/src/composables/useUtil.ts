@@ -1,5 +1,13 @@
 /** Small browser utilities: clock, persisted refs, fullscreen, media query. */
-import { onScopeDispose, readonly, shallowRef, watch, type Ref } from "vue";
+import {
+  onScopeDispose,
+  readonly,
+  shallowRef,
+  toValue,
+  watch,
+  type MaybeRefOrGetter,
+  type Ref,
+} from "vue";
 
 // one shared ticking clock per interval so 20 tiles don't own 20 timers
 const clocks = new Map<
@@ -97,4 +105,29 @@ export function useElementSize(target: Ref<HTMLElement | null | undefined>) {
   );
   onScopeDispose(() => observer.disconnect());
   return { width, height };
+}
+
+/** Sets the tab title while the calling component is mounted. */
+export function useDocumentTitle(title: MaybeRefOrGetter<string>) {
+  const previous = document.title;
+  watch(
+    () => toValue(title),
+    (value) => {
+      if (value) document.title = value;
+    },
+    { immediate: true },
+  );
+  onScopeDispose(() => {
+    document.title = previous;
+  });
+}
+
+/** Save text as a file through a temporary object URL. */
+export function downloadText(filename: string, text: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }

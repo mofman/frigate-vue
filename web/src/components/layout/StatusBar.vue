@@ -2,30 +2,20 @@
 /** Footer with system metrics, health and the current date and time. */
 import { computed } from "vue";
 import { Check, TriangleExclamationPoint } from "@lucide/vue";
-import { useConfig, useStats } from "@/composables/useFrigate";
+import { useIsAdmin, useStats, useTimeOptions } from "@/composables/useFrigate";
 import { useNow } from "@/composables/useUtil";
 import { useT } from "@/composables/useT";
-import {
-  formatDateTime,
-  formatTime,
-  formatUptime,
-  resolveTimezone,
-} from "@/utils/time";
+import { formatDateTime, formatTime, formatUptime } from "@/utils/time";
 import StatusChip from "./StatusChip.vue";
 
 const { t } = useT(["views/app"]);
 const stats = useStats();
-const { data: config } = useConfig();
+const isAdmin = useIsAdmin();
+/** the system page is admin only, so others get plain chips */
+const link = (tab: string) =>
+  isAdmin.value ? { path: "/system", hash: `#${tab}` } : undefined;
+const timeOptions = useTimeOptions();
 const now = useNow(1000);
-
-const timezone = computed(() => resolveTimezone(config.value?.ui?.timezone));
-const hour12 = computed(() =>
-  config.value?.ui?.time_format === "12hour"
-    ? true
-    : config.value?.ui?.time_format === "24hour"
-      ? false
-      : undefined,
-);
 
 const cpu = computed(() => {
   const value = stats.value?.cpu_usages["frigate.full_system"]?.cpu;
@@ -78,7 +68,7 @@ const healthLabel = computed(() => {
 
 const stamp = computed(
   () =>
-    `${formatDateTime(now.value, { timezone: timezone.value, hour12: hour12.value }).split(",")[0]} ${formatTime(now.value, { timezone: timezone.value, hour12: hour12.value })}`,
+    `${formatDateTime(now.value, timeOptions.value).split(",")[0]} ${formatTime(now.value, timeOptions.value)}`,
 );
 </script>
 
@@ -90,27 +80,35 @@ const stamp = computed(
         :label="t('status.cpu')"
         :value="`${cpu}%`"
         :level="cpu"
+        :to="link('general')"
       />
       <StatusChip
         v-if="gpu !== undefined"
         :label="t('status.gpu')"
         :value="`${gpu}%`"
         :level="gpu"
+        :to="link('general')"
       />
       <StatusChip
         v-if="storage !== undefined"
         :label="t('status.storage')"
         :value="`${storage}%`"
         :level="storage"
+        :to="link('storage')"
       />
       <StatusChip v-if="uptime" :label="t('status.uptime')" :value="uptime" />
     </div>
     <div class="status-bar__end">
-      <span class="system-health" :class="{ 'is-degraded': !healthy }">
+      <component
+        :is="isAdmin ? 'RouterLink' : 'span'"
+        :to="link('health')"
+        class="system-health"
+        :class="{ 'is-degraded': !healthy }"
+      >
         <Check v-if="healthy" :size="14" aria-hidden="true" />
         <TriangleExclamationPoint v-else :size="14" aria-hidden="true" />
         {{ healthLabel }}
-      </span>
+      </component>
       <time class="status-bar__time">{{ stamp }}</time>
     </div>
   </footer>
@@ -148,6 +146,11 @@ const stamp = computed(
 
   svg {
     filter: drop-shadow(0 0 4px var(--online-glow));
+  }
+
+  &:is(a):hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   &.is-degraded {

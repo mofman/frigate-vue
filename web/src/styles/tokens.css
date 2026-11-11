@@ -91,6 +91,33 @@
     --tick-minor: #475569;
     --tick-faint: #334155;
 
+    /* code editor */
+    --code-bg: var(--bg-deep);
+    --code-gutter: var(--bg-base);
+    --code-line-active: rgb(90 167 255 / 0.06);
+    --code-selection: rgb(90 167 255 / 0.22);
+    --code-cursor: var(--accent);
+    --code-key: #7db7ff;
+    --code-string: #a5d6a7;
+    --code-number: #ffb454;
+    --code-atom: #c792ea;
+    --code-comment: #647184;
+    --code-punctuation: #aab6c4;
+
+    /* chart series, distinct at a glance on the dark surfaces */
+    --chart-1: #5aa7ff;
+    --chart-2: #34d399;
+    --chart-3: #fbbf24;
+    --chart-4: #f472b6;
+    --chart-5: #a78bfa;
+    --chart-6: #22d3ee;
+    --chart-7: #fb923c;
+    --chart-8: #94a3b8;
+    --chart-grid: rgb(203 213 225 / 0.08);
+    --chart-ok: #34d399;
+    --chart-other: #475569;
+    --chart-unused: #263241;
+
     /* scrims */
     --scrim-top: linear-gradient(
       to bottom,

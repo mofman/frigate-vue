@@ -3,6 +3,7 @@
 import ToastHost from "@/components/ui/ToastHost.vue";
 import AppSidebar from "./AppSidebar.vue";
 import StatusBar from "./StatusBar.vue";
+import RestartDialog from "./RestartDialog.vue";
 </script>
 
 <template>
@@ -13,6 +14,7 @@ import StatusBar from "./StatusBar.vue";
     </main>
     <StatusBar />
     <ToastHost />
+    <RestartDialog />
   </div>
 </template>
 

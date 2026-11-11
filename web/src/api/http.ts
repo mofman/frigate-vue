@@ -7,9 +7,30 @@ export class HttpError extends Error {
   constructor(
     public status: number,
     public url: string,
+    /** parsed response body, when the server sent one */
+    public body?: unknown,
   ) {
     super(`Request failed with ${status}`);
   }
+
+  /** The server's own explanation, from a `message` or `detail` field. */
+  get detail(): string | undefined {
+    const body = this.body;
+    if (typeof body === "string") return body || undefined;
+    if (body && typeof body === "object") {
+      const { message, detail } = body as Record<string, unknown>;
+      if (typeof message === "string" && message) return message;
+      if (typeof detail === "string" && detail) return detail;
+    }
+    return undefined;
+  }
+}
+
+/** Best available text for an error from a request. */
+export function errorMessage(error: unknown): string {
+  if (error instanceof HttpError) return error.detail ?? error.message;
+  if (error instanceof Error) return error.message;
+  return String(error);
 }
 
 const REDIRECT_PARAM = "redirect";
@@ -70,6 +91,8 @@ function handleAuthFailure(response: Response) {
 type RequestOptions = {
   params?: QueryParams;
   body?: unknown;
+  /** send this text as is instead of JSON encoding `body` */
+  text?: string;
   signal?: AbortSignal;
   /** skip the login redirect, used by the auth bootstrap itself */
   allowUnauthorized?: boolean;
@@ -78,9 +101,15 @@ type RequestOptions = {
 async function request<T>(
   method: string,
   path: string,
-  { params, body, signal, allowUnauthorized }: RequestOptions = {},
+  { params, body, text, signal, allowUnauthorized }: RequestOptions = {},
 ): Promise<T> {
   const url = buildUrl(path, params);
+  const contentType =
+    text !== undefined
+      ? "text/plain"
+      : body !== undefined
+        ? "application/json"
+        : undefined;
   const response = await fetch(url, {
     method,
     signal,
@@ -88,9 +117,9 @@ async function request<T>(
     headers: {
       "X-CSRF-TOKEN": "1",
       "X-CACHE-BYPASS": "1",
-      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(contentType ? { "Content-Type": contentType } : {}),
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: text ?? (body !== undefined ? JSON.stringify(body) : undefined),
   });
 
   if ([401, 302, 307].includes(response.status)) {
@@ -98,12 +127,16 @@ async function request<T>(
     throw new HttpError(response.status, url);
   }
 
+  const type = response.headers.get("content-type") ?? "";
+  const parsed = type.includes("json")
+    ? await response.json().catch(() => undefined)
+    : await response.text();
+
   if (!response.ok) {
-    throw new HttpError(response.status, url);
+    throw new HttpError(response.status, url, parsed);
   }
 
-  const type = response.headers.get("content-type") ?? "";
-  return (type.includes("json") ? response.json() : response.text()) as T;
+  return parsed as T;
 }
 
 export const http = {

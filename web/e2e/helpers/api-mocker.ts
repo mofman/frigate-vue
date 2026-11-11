@@ -31,6 +31,12 @@ export const PLACEHOLDER_PNG = Buffer.from(
   "base64",
 );
 
+const MOCK_LOG_LINES = [
+  "2026-04-06 10:00:00.000000000  [2026-04-06 10:00:00] frigate.app                    INFO    : Starting Frigate",
+  "2026-04-06 10:00:01.000000000  [2026-04-06 10:00:01] frigate.video                  WARNING : front_door: stream is slow",
+  "2026-04-06 10:00:02.000000000  [2026-04-06 10:00:02] frigate.record                 ERROR   : Unable to write segment",
+];
+
 export interface ApiMockOverrides {
   config?: DeepPartial<typeof BASE_CONFIG>;
   profile?: UserProfile;
@@ -41,6 +47,11 @@ export interface ApiMockOverrides {
   cases?: unknown[];
   faces?: Record<string, unknown>;
   configRaw?: string;
+  /** lines returned by /logs/{service} */
+  logLines?: string[];
+  /** body of the /logs/{service}?stream=true response */
+  logStream?: string;
+  cameraStorage?: Record<string, unknown>;
   configSchema?: Record<string, unknown>;
   hardware?: unknown[];
   hwaccel?: {
@@ -187,21 +198,55 @@ export class ApiMocker {
       route.fulfill({ json: overrides?.faces ?? {} }),
     );
 
-    // Logs
-    await this.page.route("**/api/logs/**", (route) =>
+    // Logs: a JSON page of lines, a text stream, or the whole file to
+    // download, depending on the query
+    await this.page.route("**/api/logs/**", (route) => {
+      const url = new URL(route.request().url());
+      const lines = overrides?.logLines ?? MOCK_LOG_LINES;
+      if (url.searchParams.get("stream") === "true") {
+        return route.fulfill({
+          contentType: "text/plain",
+          body: overrides?.logStream ?? "",
+        });
+      }
+      if (url.searchParams.has("download")) {
+        return route.fulfill({ json: lines.join("\n") });
+      }
+      return route.fulfill({
+        json: { totalLines: lines.length, lines },
+      });
+    });
+
+    // Stats history for the System charts: a short window ending now
+    await this.page.route("**/api/stats/history**", (route) => {
+      const now = Date.now() / 1000;
+      return route.fulfill({
+        json: Array.from({ length: 6 }, (_, index) => ({
+          ...stats,
+          service: { ...stats.service, last_updated: now - (5 - index) * 15 },
+        })),
+      });
+    });
+
+    // Recordings storage per camera, MiB
+    await this.page.route("**/api/recordings/storage", (route) =>
       route.fulfill({
-        contentType: "text/plain",
-        body: "[2026-04-06 10:00:00] INFO: Frigate started\n[2026-04-06 10:00:01] INFO: Cameras loaded\n",
+        json: overrides?.cameraStorage ?? {
+          front_door: { usage: 20480, bandwidth: 512, usage_percent: 40 },
+          backyard: { usage: 10240, bandwidth: 256, usage_percent: 20 },
+        },
       }),
     );
 
     // Config raw
     await this.page.route("**/api/config/raw", (route) =>
       route.fulfill({
+        // like the backend: a JSON encoded string labelled text/plain
         contentType: "text/plain",
-        body:
+        body: JSON.stringify(
           overrides?.configRaw ??
-          "mqtt:\n  host: mqtt\ncameras:\n  front_door:\n    enabled: true\n",
+            "mqtt:\n  host: mqtt\ncameras:\n  front_door:\n    enabled: true\n",
+        ),
       }),
     );
 

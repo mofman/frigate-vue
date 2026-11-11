@@ -1,8 +1,17 @@
 <script setup lang="ts">
-/** Compact metric in the status bar. Tone shifts with the value. */
+/**
+ * Compact metric in the status bar. Tone shifts with the value; with `to` it
+ * links to the page that explains it.
+ */
 import { computed } from "vue";
+import type { RouteLocationRaw } from "vue-router";
 
-const props = defineProps<{ label: string; value: string; level?: number }>();
+const props = defineProps<{
+  label: string;
+  value: string;
+  level?: number;
+  to?: RouteLocationRaw;
+}>();
 const tone = computed(() => {
   if (props.level === undefined) return "healthy";
   if (props.level >= 90) return "danger";
@@ -12,11 +21,16 @@ const tone = computed(() => {
 </script>
 
 <template>
-  <div class="status-chip" :class="`is-${tone}`">
+  <component
+    :is="to ? 'RouterLink' : 'div'"
+    :to="to"
+    class="status-chip"
+    :class="[`is-${tone}`, { 'is-link': to }]"
+  >
     <span class="status-chip__dot" aria-hidden="true" />
     <span class="status-chip__label">{{ label }}</span>
     <span class="status-chip__value">{{ value }}</span>
-  </div>
+  </component>
 </template>
 
 <style scoped>
@@ -39,6 +53,14 @@ const tone = computed(() => {
   &.is-danger {
     --dot: var(--danger);
     --dot-glow: var(--danger-glow);
+  }
+
+  &.is-link {
+    transition: border-color var(--dur);
+
+    &:hover {
+      border-color: var(--line-hover);
+    }
   }
 }
 

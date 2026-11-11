@@ -42,10 +42,14 @@ skipped when it is not installed.
 | --- | --- |
 | `src/styles/tokens.css` | Design tokens, the only place colors are defined |
 | `src/components/` | Reusable components, each with scoped CSS |
+| `src/components/charts/` | SVG charts (threshold bars, lines, usage bars), no chart library |
+| `src/components/system/` | System page tabs: health, general, storage, cameras, enrichments |
+| `src/components/config/` | CodeMirror YAML editor for the config editor |
 | `src/views/` | Route components |
 | `src/players/` | Live (MSE, WebRTC, jsmpeg) and recorded (HLS) playback |
 | `src/api/` | fetch wrapper, query cache and websocket |
 | `src/composables/` | Shared reactive logic |
+| `src/utils/` | Pure helpers (stats series, log parsing, health rules), unit tested |
 
 See `TODO.md` for the roadmap.
 

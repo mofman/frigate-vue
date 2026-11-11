@@ -4,14 +4,7 @@
  * the new interface show disabled until they land.
  */
 import { computed } from "vue";
-import {
-  Bell,
-  CircleUserRound,
-  Download,
-  Monitor,
-  Search,
-  Settings,
-} from "@lucide/vue";
+import { Bell, CircleUserRound, Download, Monitor, Search } from "@lucide/vue";
 import logo from "@/assets/logo.svg";
 import { useQuery } from "@/api/query";
 import { onWsMessage } from "@/api/ws";
@@ -19,6 +12,7 @@ import { useT } from "@/composables/useT";
 import type { ReviewSegment } from "@/types/frigate";
 import SidebarNavItem from "./SidebarNavItem.vue";
 import AccountMenu from "./AccountMenu.vue";
+import SettingsMenu from "./SettingsMenu.vue";
 
 const { t } = useT(["views/app"]);
 
@@ -61,12 +55,7 @@ const soon = computed(() => t("nav.comingSoon"));
       </nav>
     </div>
     <div class="sidebar__bottom">
-      <SidebarNavItem
-        :icon="Settings"
-        :label="t('nav.settings')"
-        disabled
-        :disabled-hint="soon"
-      />
+      <SettingsMenu />
       <AccountMenu v-slot="{ popovertarget }">
         <button
           type="button"

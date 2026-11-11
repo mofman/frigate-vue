@@ -1,15 +1,21 @@
 <script setup lang="ts">
-/** Account popover: who is signed in, language and logout. */
-import { computed } from "vue";
+/**
+ * Account popover: who is signed in and logout. On phones, where the rail's
+ * settings menu is not in the dock, it also carries the admin pages.
+ */
+import { computed, shallowRef } from "vue";
 import { LogOut } from "@lucide/vue";
 import { baseUrl } from "@/api/baseUrl";
-import { useConfig, useProfile } from "@/composables/useFrigate";
+import { useConfig, useIsAdmin, useProfile } from "@/composables/useFrigate";
 import { useT } from "@/composables/useT";
 import PopoverMenu from "@/components/ui/PopoverMenu.vue";
 import MenuItem from "@/components/ui/MenuItem.vue";
 import MenuLabel from "@/components/ui/MenuLabel.vue";
+import AdminMenuItems from "./AdminMenuItems.vue";
 
-const { t } = useT(["views/app"]);
+const { t } = useT(["views/app", "common"]);
+const isAdmin = useIsAdmin();
+const menu = shallowRef<InstanceType<typeof PopoverMenu> | null>(null);
 const { data: profile } = useProfile();
 const { data: config } = useConfig();
 
@@ -26,7 +32,7 @@ function logout() {
 </script>
 
 <template>
-  <PopoverMenu align="start" width="220px">
+  <PopoverMenu ref="menu" align="start" width="232px">
     <template #trigger="slotProps">
       <slot v-bind="slotProps" />
     </template>
@@ -35,6 +41,10 @@ function logout() {
       {{ profile?.username ?? t("account.anonymous") }}
     </div>
     <div v-if="profile?.role" class="account-role">{{ profile.role }}</div>
+    <div v-if="isAdmin" class="account-admin">
+      <AdminMenuItems @done="menu?.close()" />
+      <div class="account-divider" role="separator" />
+    </div>
     <MenuItem v-if="!isAnonymous" @click="logout">
       <template #icon><LogOut /></template>
       {{ t("account.logout") }}
@@ -43,6 +53,19 @@ function logout() {
 </template>
 
 <style scoped>
+/* the rail's settings menu has these on wider screens */
+@media (min-width: 769px) {
+  .account-admin {
+    display: none;
+  }
+}
+
+.account-divider {
+  block-size: 1px;
+  margin: 6px 4px;
+  background: var(--glass-border);
+}
+
 .account-name {
   padding: 0 10px;
   font-size: var(--text-base);
