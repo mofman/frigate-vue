@@ -40,11 +40,15 @@ import StatusBar from "./StatusBar.vue";
 @media (max-width: 768px) {
   .app-shell {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-rows: auto;
     grid-template-areas: "page";
+    block-size: auto;
+    min-block-size: 100dvh;
   }
 
+  /* the document scrolls on phones, so the page grows with its content */
   .app-shell__page {
+    overflow: visible;
     padding-block-end: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
   }
 }

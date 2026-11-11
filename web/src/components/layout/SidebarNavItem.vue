@@ -100,7 +100,10 @@ defineProps<{
 
 @media (max-width: 768px) {
   .nav-item {
-    padding: 8px 6px;
+    justify-content: center;
+    inline-size: 56px;
+    block-size: 56px;
+    padding: 0;
   }
 
   .nav-item__label {

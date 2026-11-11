@@ -126,6 +126,9 @@ const labelText = computed(() =>
     aspect-ratio: 16 / 9;
     padding: 0;
     margin: 0;
+    overflow: hidden;
+    border-radius: var(--radius);
+    scroll-snap-align: start;
     border-color: var(--glass-border);
     background: var(--bg-media);
   }

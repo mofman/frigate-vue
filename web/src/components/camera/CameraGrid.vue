@@ -64,4 +64,10 @@ const spacing = computed(() => gridSpacing(width.value));
     overflow-y: auto;
   }
 }
+
+@media (max-width: 768px) {
+  .camera-grid.is-scrolling {
+    overflow: visible;
+  }
+}
 </style>

@@ -667,6 +667,13 @@ function onSwitched(kind: string, ms: number) {
 }
 
 @media (max-width: 768px) {
+  /* the camera view keeps a fixed screen layout: stage above, timeline below */
+  .camera-view {
+    block-size: calc(
+      100dvh - var(--tabbar-height) - env(safe-area-inset-bottom)
+    );
+  }
+
   .camera-view__body {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);

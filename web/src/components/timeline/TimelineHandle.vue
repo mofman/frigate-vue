@@ -14,10 +14,7 @@ const { t } = useT(["views/app"]);
   >
     <span class="handle__line" />
     <span class="handle__pill">
-      <template v-if="live">
-        <span class="handle__dot" />
-        {{ t("timeline.live") }}
-      </template>
+      <template v-if="live">{{ t("timeline.live") }}</template>
       <template v-else>{{ label }}</template>
     </span>
   </div>
@@ -57,14 +54,14 @@ const { t } = useT(["views/app"]);
   justify-content: center;
   gap: 6px;
   block-size: 24px;
-  min-inline-size: 76px;
+  min-inline-size: 86px;
   padding-inline: 10px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-xs);
   background: var(--tone);
   color: var(--text-on-media);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   box-shadow: var(--shadow-pill);
   cursor: grab;
@@ -78,13 +75,5 @@ const { t } = useT(["views/app"]);
     border: 1px solid var(--live-border);
     box-shadow: 0 0 24px var(--live-glow);
   }
-}
-
-.handle__dot {
-  inline-size: 6px;
-  block-size: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: pulse-dot 2.5s ease-in-out infinite;
 }
 </style>

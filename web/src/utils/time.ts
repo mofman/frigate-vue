@@ -7,8 +7,12 @@ type FormatOptions = {
   seconds?: boolean;
 };
 
+/**
+ * Dates and times follow the browser's regional format (eg 24 hour clocks
+ * for en-GB) even though translations load the base language.
+ */
 function locale() {
-  return i18next.language || navigator.language;
+  return navigator.language || i18next.language;
 }
 
 export function resolveTimezone(configured?: string) {

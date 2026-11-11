@@ -17,7 +17,13 @@ import { useTimelineData } from "@/composables/useTimelineData";
 import { useT } from "@/composables/useT";
 import type { ReviewSegment } from "@/types/frigate";
 import { formatTime, resolveTimezone } from "@/utils/time";
-import { draw, readPalette, ZOOM_LEVELS, type Palette } from "./timelineDraw";
+import {
+  draw,
+  readPalette,
+  ROW,
+  ZOOM_LEVELS,
+  type Palette,
+} from "./timelineDraw";
 import TimelineHandle from "./TimelineHandle.vue";
 import TimelineZoom from "./TimelineZoom.vue";
 
@@ -35,9 +41,13 @@ const zoomIndex = shallowRef(0);
 const zoom = computed(() => ZOOM_LEVELS[zoomIndex.value]!);
 const spp = computed(() => zoom.value.secondsPerPx);
 
-const ANCHOR_STEP = 1800;
-const anchorFor = (time: number) =>
-  Math.ceil((time + 300) / ANCHOR_STEP) * ANCHOR_STEP;
+// the top of the timeline sits a fixed number of rows above now, on a row
+// boundary: room for the live handle plus a short "future" strip above it
+const LEAD_ROWS = 16;
+const anchorFor = (time: number) => {
+  const segment = ROW * spp.value;
+  return Math.ceil((time + LEAD_ROWS * segment) / segment) * segment;
+};
 const top = shallowRef(anchorFor(Date.now() / 1000));
 
 const scroller = shallowRef<HTMLDivElement | null>(null);
@@ -132,7 +142,7 @@ watch(
 // ---- anchor & scroll -------------------------------------------------------
 
 watch(now, (current) => {
-  if (current < top.value - 120) return;
+  if (current < top.value - (LEAD_ROWS - 1) * ROW * spp.value) return;
   const next = anchorFor(current);
   const delta = (next - top.value) / spp.value;
   top.value = next;
@@ -188,6 +198,7 @@ function setZoom(index: number) {
   const anchorTime = handleTime.value;
   const offset = el ? handleY.value - el.scrollTop : 0;
   zoomIndex.value = index;
+  top.value = anchorFor(now.value);
   requestAnimationFrame(() => {
     if (!el) return;
     el.scrollTop = yAt(anchorTime) - offset;
@@ -309,7 +320,7 @@ const handleLabel = computed(() =>
 <template>
   <div
     class="timeline"
-    :class="{ 'is-dragging': dragging }"
+    :class="{ 'is-dragging': dragging, 'is-live': playback.isLive.value }"
     :data-ready="ready || undefined"
   >
     <canvas ref="canvas" class="timeline__canvas" aria-hidden="true" />
@@ -356,6 +367,7 @@ const handleLabel = computed(() =>
 
 <style scoped>
 .timeline {
+  --tone-future: var(--text-tertiary);
   position: relative;
   inline-size: 100%;
   block-size: 100%;
@@ -364,6 +376,10 @@ const handleLabel = computed(() =>
   background: var(--bg-bar);
   border-inline-start: 1px solid var(--glass-border);
   user-select: none;
+}
+
+.timeline.is-live {
+  --tone-future: var(--live);
 }
 
 .timeline__canvas {
@@ -395,12 +411,20 @@ const handleLabel = computed(() =>
 .timeline__future {
   position: absolute;
   inset: 0 0 auto;
-  background: repeating-linear-gradient(
-    -45deg,
-    transparent 0 6px,
-    color-mix(in srgb, var(--bg-surface) 40%, transparent) 6px 7px
-  );
   pointer-events: none;
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 35%,
+      color-mix(in srgb, var(--tone-future) 18%, transparent)
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0 7px,
+      color-mix(in srgb, var(--text-tertiary) 16%, transparent) 7px 8px
+    );
+  /* fade in from the top so the strip reads as "not yet" rather than a box */
+  mask-image: linear-gradient(to bottom, transparent, var(--bg-media) 35%);
 }
 
 .timeline__fade {

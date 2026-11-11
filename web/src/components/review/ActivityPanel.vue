@@ -154,14 +154,27 @@ function open(review: ReviewSegment) {
     display: flex;
     gap: 10px;
     flex: none;
-    block-size: calc(clamp(150px, 22vw, 220px) * 9 / 16 + 20px);
-    padding: 10px 12px;
+    block-size: calc(clamp(150px, 22vw, 220px) * 9 / 16 + 24px);
+    /* same gutter and gap as the camera grid below, so edges line up */
+    padding: 12px;
+    gap: 12px;
+    scroll-padding-inline: 12px;
+    scroll-snap-type: x mandatory;
     overflow-x: auto;
     overflow-y: hidden;
   }
 
   .activity-panel__list :deep(.empty-state) {
     padding: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .activity-panel__list {
+    block-size: calc(clamp(150px, 22vw, 220px) * 9 / 16 + 20px);
+    padding: 10px;
+    gap: 8px;
+    scroll-padding-inline: 10px;
   }
 }
 </style>

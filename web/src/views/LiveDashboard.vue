@@ -228,4 +228,16 @@ async function open(name: string) {
     grid-template-rows: auto minmax(0, 1fr);
   }
 }
+
+/* phones scroll the whole document, the grid just grows */
+@media (max-width: 768px) {
+  .dashboard {
+    block-size: auto;
+    min-block-size: 100%;
+  }
+
+  .dashboard__content {
+    grid-template-rows: auto auto;
+  }
+}
 </style>

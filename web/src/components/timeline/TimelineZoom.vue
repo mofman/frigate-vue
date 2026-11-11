@@ -12,7 +12,7 @@ const { t } = useT(["views/app", "views/events"]);
 <template>
   <div class="timeline-zoom">
     <IconButton
-      size="sm"
+      size="md"
       :label="t('views/events:zoomOut')"
       :disabled="props.level === 0"
       @click="emit('update:level', props.level - 1)"
@@ -20,7 +20,7 @@ const { t } = useT(["views/app", "views/events"]);
       <ZoomOut />
     </IconButton>
     <IconButton
-      size="sm"
+      size="md"
       :label="t('views/events:zoomIn')"
       :disabled="props.level >= props.levels - 1"
       @click="emit('update:level', props.level + 1)"
@@ -34,6 +34,6 @@ const { t } = useT(["views/app", "views/events"]);
 .timeline-zoom {
   display: flex;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
 }
 </style>

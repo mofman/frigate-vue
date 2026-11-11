@@ -137,36 +137,41 @@ const soon = computed(() => t("nav.comingSoon"));
 }
 
 @media (max-width: 768px) {
+  /* a dock: the bar is its own height plus the home indicator area */
   .sidebar {
     position: fixed;
     inset: auto 0 0;
-    block-size: var(--tabbar-height);
+    block-size: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
     flex-direction: row;
-    align-items: center;
-    padding: 0 8px env(safe-area-inset-bottom);
-    background: var(--bg-tabbar);
-    backdrop-filter: blur(16px);
+    align-items: flex-start;
+    justify-content: space-around;
+    padding: 4px 8px env(safe-area-inset-bottom);
+    background: var(--bg-dock);
+    backdrop-filter: blur(20px);
     border-inline-end: none;
     border-block-start: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-dock);
     z-index: 50;
   }
 
-  .sidebar__logo,
+  /* flatten the groups so every item shares the dock evenly */
+  .sidebar__top,
+  .sidebar__nav,
   .sidebar__bottom {
+    display: contents;
+  }
+
+  .sidebar__logo,
+  .sidebar__bottom > :first-child {
     display: none;
   }
 
-  .sidebar__top {
-    flex: 1;
-    flex-direction: row;
+  .sidebar__account {
+    inline-size: 56px;
+    block-size: 56px;
+    justify-content: center;
     padding: 0;
-  }
-
-  .sidebar__nav {
-    flex: 1;
-    flex-direction: row;
-    justify-content: space-around;
-    gap: 0;
+    font-size: 10px;
   }
 }
 </style>

@@ -272,8 +272,18 @@ async function markAll() {
 }
 
 @media (max-width: 768px) {
+  /* the document scrolls on phones */
+  .review-view {
+    block-size: auto;
+  }
+
   .review-view__scroll {
+    overflow: visible;
     padding: 8px 10px 24px;
+  }
+
+  .review-view__day-label {
+    inset-block-start: 0;
   }
 
   .review-view__grid {
