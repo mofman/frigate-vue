@@ -103,7 +103,7 @@ const duration = computed(() =>
         decoding="async"
       />
       <video
-        v-if="nearViewport"
+        v-if="nearViewport && reviewPreview(review)"
         ref="video"
         class="review-card__preview"
         :class="{ 'is-playing': previewing }"

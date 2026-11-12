@@ -1,5 +1,6 @@
 /** Thin fetch wrapper for the Frigate REST API. */
 import { baseUrl } from "./baseUrl";
+import { applyDemoConfig, demoMode } from "@/utils/demo";
 
 export const apiBase = `${baseUrl}api/`;
 
@@ -134,6 +135,10 @@ async function request<T>(
 
   if (!response.ok) {
     throw new HttpError(response.status, url, parsed);
+  }
+
+  if (demoMode && method === "GET" && path === "config") {
+    applyDemoConfig(parsed);
   }
 
   return parsed as T;

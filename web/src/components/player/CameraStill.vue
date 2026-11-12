@@ -5,6 +5,7 @@
  */
 import { onBeforeUnmount, shallowRef, watch } from "vue";
 import { baseUrl } from "@/api/baseUrl";
+import { demoImage, demoMode } from "@/utils/demo";
 
 const props = withDefaults(
   defineProps<{
@@ -21,6 +22,10 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 
 function next() {
   clearTimeout(timer);
+  if (demoMode) {
+    src.value = demoImage(props.camera);
+    return;
+  }
   const url = `${baseUrl}api/${props.camera}/latest.webp?height=${props.height}&cache=${Date.now()}`;
   const image = new Image();
   image.decoding = "async";
@@ -54,6 +59,7 @@ defineExpose({ image });
     v-if="src"
     ref="image"
     class="camera-still"
+    :class="{ 'is-demo': demoMode }"
     :src="src"
     alt=""
     decoding="async"
@@ -67,5 +73,9 @@ defineExpose({ image });
   inline-size: 100%;
   block-size: 100%;
   object-fit: contain;
+
+  &.is-demo {
+    object-fit: cover;
+  }
 }
 </style>

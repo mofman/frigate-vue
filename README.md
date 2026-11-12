@@ -1,83 +1,87 @@
-<p align="center">
-  <img align="center" alt="logo" src="docs/static/img/branding/frigate.png">
+# Frigate Vue
+
+A redesign of the [Frigate NVR](https://github.com/blakeblackshear/frigate) web UI, rebuilt in Vue 3 with TypeScript and plain modern CSS.
+
+Only the frontend in `web/` changes. The backend is upstream Frigate (0.19 dev), so the new UI runs against a normal Frigate install and uses the same config, database and recordings.
+
+> This is a work in progress and not an official Frigate project. See [`web/TODO.md`](web/TODO.md) for what is done and what is still to be ported.
+
+![Camera dashboard](docs/screenshots/dashboard-desktop.png)
+
+![Camera view with timeline](docs/screenshots/camera-desktop.png)
+
+<p>
+  <img width="49%" alt="Dashboard on mobile" src="docs/screenshots/dashboard-mobile.png">
+  <img width="49%" alt="Camera view on mobile" src="docs/screenshots/camera-mobile.png">
 </p>
 
-# Frigate NVR™ - Realtime Object Detection for IP Cameras
+## What's different
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+- **One camera view for live and review.** Live, recordings and the scrub preview sit on a single stage, with the timeline beside it. Drag the playhead back to review footage, then release at the top or press `L` to return to live. Opening an alert or detection takes you to the same view at that moment.
+- **No black frames when switching.** The current frame stays on screen until the next source has drawn its first frame. The stage keeps a fixed size, so the layout does not shift.
+- **Fast handoffs.** Live stays connected for a short time after you scrub away, so going back to live resumes instead of reconnecting. Recordings are loaded in advance, so the first scrub back is just a seek.
+- **Page transitions.** A camera tile expands into the camera view using the View Transitions API and keeps its live stream, so nothing reloads.
+- **Smart dashboard.** Tiles show a still image until there is activity, then switch to live. The grid sizes itself so every camera fits on screen. The recent activity panel becomes a thumbnail strip on smaller screens.
+- **Mobile first.** The sidebar becomes a bottom tab bar on phones, and the timeline sits under the stage.
+- **Lighter stack.** Uses Vue 3 and plain scoped CSS with design tokens. It has no CSS framework, UI kit or chart library.
 
-<a href="https://hosted.weblate.org/engage/frigate-nvr/">
-<img src="https://hosted.weblate.org/widget/frigate-nvr/language-badge.svg" alt="Translation status" />
-</a>
+## Running with Docker
 
-\[English\] | [简体中文](https://github.com/blakeblackshear/frigate/blob/dev/README_CN.md)
+### Option 1: Mount the UI into an existing Frigate container
 
-A complete and local NVR designed for [Home Assistant](https://www.home-assistant.io) with AI object detection. Uses OpenCV and Tensorflow to perform realtime object detection locally for IP cameras.
+This is the quickest option. Build the frontend once:
 
-Use of a GPU or AI accelerator is highly recommended. AI accelerators will outperform even the best CPUs with very little overhead. See Frigate's supported [object detectors](https://docs.frigate.video/configuration/object_detectors/).
+```bash
+cd web
+npm install
+npm run build
+rm -rf dist/BASE_PATH
+```
 
-- Tight integration with Home Assistant via a [custom component](https://github.com/blakeblackshear/frigate-hass-integration)
-- Designed to minimize resource use and maximize performance by only looking for objects when and where it is necessary
-- Leverages multiprocessing heavily with an emphasis on realtime over processing every frame
-- Uses a very low overhead motion detection to determine where to run object detection
-- Object detection with TensorFlow runs in separate processes for maximum FPS
-- Communicates over MQTT for easy integration into other systems
-- Records video with retention settings based on detected objects
-- 24/7 recording
-- Re-streaming via RTSP to reduce the number of connections to your camera
-- WebRTC & MSE support for low-latency live view
+Then mount `web/dist` over the bundled UI in your Frigate container:
 
-## Documentation
+```yaml
+services:
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:<0.19 dev tag>
+    volumes:
+      - ./config:/config
+      - ./storage:/media/frigate
+      - /path/to/frigate-vue/web/dist:/opt/frigate/web:ro
+    ports:
+      - "8971:8971"
+      - "8554:8554"
+      - "8555:8555/tcp"
+      - "8555:8555/udp"
+```
 
-View the documentation at https://docs.frigate.video
+Restart the container and open `https://<host>:8971`. To go back to the stock UI, remove the volume line.
 
-## Donations
+Because the UI talks to the 0.19 API, use a 0.19 dev image. Older releases may be missing endpoints.
 
-If you would like to make a donation to support development, please use [Github Sponsors](https://github.com/sponsors/blakeblackshear).
+### Option 2: Build the full image
+
+This builds Frigate with the new UI baked in, using the upstream Dockerfile:
+
+```bash
+make local   # produces frigate:latest
+make run     # runs it with ./config mounted, on ports 5000 and 8971
+```
+
+Then use `frigate:latest` as the `image` in your compose file.
+
+## Developing the UI
+
+You can run the dev server against any Frigate instance. No Docker is needed:
+
+```bash
+cd web
+npm install
+PROXY_HOST=<frigate-ip>:5000 npm run dev
+```
+
+Port 5000 is Frigate's internal, unauthenticated port, so it must be published from the container. On macOS, port 5000 is taken by AirPlay, so point at the Frigate host explicitly. For checks, tests and the project layout, see [`web/README.md`](web/README.md).
 
 ## License
 
-This project is licensed under the **MIT License**.
-
-- **Code:** The source code, configuration files, and documentation in this repository are available under the [MIT License](LICENSE). You are free to use, modify, and distribute the code as long as you include the original copyright notice.
-- **Trademarks:** The "Frigate" name, the "Frigate NVR" brand, and the Frigate logo are **trademarks of Frigate, Inc.** and are **not** covered by the MIT License.
-
-Please see our [Trademark Policy](TRADEMARK.md) for details on acceptable use of our brand assets.
-
-## Screenshots
-
-### Live dashboard
-
-<div>
-<img width="800" alt="Live dashboard" src="https://github.com/blakeblackshear/frigate/assets/569905/5e713cb9-9db5-41dc-947a-6937c3bc376e">
-</div>
-
-### Streamlined review workflow
-
-<div>
-<img width="800" alt="Streamlined review workflow" src="https://github.com/blakeblackshear/frigate/assets/569905/6fed96e8-3b18-40e5-9ddc-31e6f3c9f2ff">
-</div>
-
-### Multi-camera scrubbing
-
-<div>
-<img width="800" alt="Multi-camera scrubbing" src="https://github.com/blakeblackshear/frigate/assets/569905/d6788a15-0eeb-4427-a8d4-80b93cae3d74">
-</div>
-
-### Built-in mask and zone editor
-
-<div>
-<img width="800" alt="Built-in mask and zone editor" src="https://github.com/blakeblackshear/frigate/assets/569905/d7885fc3-bfe6-452f-b7d0-d957cb3e31f5">
-</div>
-
-## Translations
-
-We use [Weblate](https://hosted.weblate.org/projects/frigate-nvr/) to support language translations. Contributions are always welcome.
-
-<a href="https://hosted.weblate.org/engage/frigate-nvr/">
-<img src="https://hosted.weblate.org/widget/frigate-nvr/multi-auto.svg" alt="Translation status" />
-</a>
-
----
-
-**Copyright © 2026 Frigate, Inc.**
+MIT, as upstream. See [LICENSE](LICENSE). "Frigate" and the Frigate logo are trademarks of Frigate, Inc. See [TRADEMARK.md](TRADEMARK.md).

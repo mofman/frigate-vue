@@ -13,6 +13,7 @@ import { useT } from "@/composables/useT";
 import type { ReviewSegment } from "@/types/frigate";
 import { formatDuration, formatTime, resolveTimezone } from "@/utils/time";
 import { REVIEW_PADDING, reviewThumb } from "@/utils/review";
+import { demoImage, demoMode } from "@/utils/demo";
 
 type TrackedObject = {
   id: string;
@@ -115,7 +116,11 @@ function score(obj: TrackedObject) {
             @click="emit('seek', obj.start_time - REVIEW_PADDING)"
           >
             <img
-              :src="`${baseUrl}api/events/${obj.id}/thumbnail.webp`"
+              :src="
+                demoMode
+                  ? demoImage(review.camera)
+                  : `${baseUrl}api/events/${obj.id}/thumbnail.webp`
+              "
               alt=""
               loading="lazy"
             />

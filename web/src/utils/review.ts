@@ -2,15 +2,19 @@
 import { mediaUrl, baseUrl } from "@/api/baseUrl";
 import { http } from "@/api/http";
 import type { ReviewSegment } from "@/types/frigate";
+import { demoImage, demoMode } from "@/utils/demo";
 
 /** seconds of lead-in before a review item when opening its recording */
 export const REVIEW_PADDING = 4;
 
 export function reviewThumb(review: ReviewSegment) {
+  if (demoMode) return demoImage(review.camera);
   return mediaUrl(review.thumb_path.replace(/^\/media\/frigate\//, ""));
 }
 
-export function reviewPreview(review: ReviewSegment) {
+/** Hover preview clip, none in demo mode where only stills are shown. */
+export function reviewPreview(review: ReviewSegment): string | undefined {
+  if (demoMode) return undefined;
   return `${baseUrl}api/review/${review.id}/preview?format=mp4`;
 }
 

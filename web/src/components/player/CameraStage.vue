@@ -16,6 +16,7 @@ import {
 } from "vue";
 import { baseUrl } from "@/api/baseUrl";
 import { RecordingPlayer } from "@/players/recording";
+import { demoImage, demoMode } from "@/utils/demo";
 import type { Playback } from "@/composables/usePlayback";
 import { useT } from "@/composables/useT";
 import type { CameraConfig } from "@/types/frigate";
@@ -321,6 +322,7 @@ onBeforeUnmount(() => {
 
 const recordingStatus = computed(() => recorder.value?.status.value);
 const loading = computed(() => {
+  if (demoMode) return false;
   if (visible.value === "live")
     return liveRef.value?.status !== "playing" && !liveFailed.value;
   if (visible.value === "recording")
@@ -365,7 +367,7 @@ defineExpose({ stage: stageRef, activeVideo, activeFrame, layer: visible });
           <LiveVideo
             ref="liveRef"
             :camera="camera"
-            :enabled="liveEnabled"
+            :enabled="liveEnabled && !demoMode"
             :parked="liveParked"
             :muted="muted || visible !== 'live'"
             :preferred-stream="preferredStream"
@@ -403,6 +405,12 @@ defineExpose({ stage: stageRef, activeVideo, activeFrame, layer: visible });
         </div>
 
         <FrameHold ref="holdRef" :poster="poster" />
+        <img
+          v-if="demoMode"
+          class="stage__demo"
+          :src="demoImage(camera.name)"
+          alt=""
+        />
       </div>
 
       <button
@@ -431,8 +439,9 @@ defineExpose({ stage: stageRef, activeVideo, activeFrame, layer: visible });
         <LoadingSpinner :size="16" :delay="600" :label="t('player.loading')" />
       </div>
 
+      <template v-if="demoMode" />
       <div
-        v-if="visible === 'recording' && recordingStatus === 'empty'"
+        v-else-if="visible === 'recording' && recordingStatus === 'empty'"
         class="stage__message"
       >
         {{ t("player.noRecordings") }}
@@ -556,6 +565,15 @@ defineExpose({ stage: stageRef, activeVideo, activeFrame, layer: visible });
   block-size: 100%;
   object-fit: contain;
   background: var(--bg-media);
+}
+
+.stage__demo {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
 }
 
 .stage__status {

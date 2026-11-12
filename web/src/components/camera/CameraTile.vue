@@ -23,6 +23,7 @@ import ActivityTags from "./ActivityTags.vue";
 import CameraName from "./CameraName.vue";
 import CameraOverlay from "./CameraOverlay.vue";
 import CameraTimestamp from "./CameraTimestamp.vue";
+import { demoMode } from "@/utils/demo";
 
 const props = withDefaults(
   defineProps<{
@@ -87,6 +88,7 @@ onBeforeUnmount(() => clearTimeout(lingerTimer));
 const hovered = shallowRef(false);
 const streamWanted = computed(
   () =>
+    !demoMode &&
     activity.enabled.value &&
     !activity.offline.value &&
     (props.streaming === "continuous" ||
