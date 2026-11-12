@@ -87,6 +87,22 @@ function open(review: ReviewSegment) {
 </template>
 
 <style scoped>
+@property --fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 48px;
+}
+
+@keyframes activity-fade {
+  90% {
+    --fade-end: 48px;
+  }
+
+  to {
+    --fade-end: 0px;
+  }
+}
+
 .activity-panel {
   display: flex;
   flex-direction: column;
@@ -162,6 +178,17 @@ function open(review: ReviewSegment) {
     scroll-snap-type: x mandatory;
     overflow-x: auto;
     overflow-y: hidden;
+    /* fade the right edge to hint at more, clearing once scrolled to the end */
+    mask-image: linear-gradient(
+      to left,
+      transparent,
+      var(--bg-media) var(--fade-end)
+    );
+
+    @supports (animation-timeline: scroll()) {
+      animation: activity-fade linear both;
+      animation-timeline: scroll(self inline);
+    }
   }
 
   .activity-panel__list :deep(.empty-state) {
