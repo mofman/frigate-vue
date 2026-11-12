@@ -30,14 +30,11 @@ function place(align: "start" | "end") {
   const height = menu.offsetHeight;
   const below = anchor.bottom + 6 + height <= innerHeight - 8;
   const top = below ? anchor.bottom + 6 : Math.max(8, anchor.top - 6 - height);
-  const style: Record<string, string> = { top: `${top}px` };
-  if (point) {
-    const width = menu.offsetWidth;
-    style.left = `${Math.max(8, Math.min(anchor.left, innerWidth - width - 8))}px`;
-  } else if (align === "end")
-    style.right = `${Math.max(8, innerWidth - anchor.right)}px`;
-  else style.left = `${Math.max(8, anchor.left)}px`;
-  position.value = style;
+  // keep the whole menu on screen, eg the account menu at a phone's edge
+  const width = menu.offsetWidth;
+  const ideal = !point && align === "end" ? anchor.right - width : anchor.left;
+  const left = Math.max(8, Math.min(ideal, innerWidth - width - 8));
+  position.value = { top: `${top}px`, left: `${left}px` };
 }
 
 async function onToggle(event: Event, align: "start" | "end") {
@@ -100,6 +97,7 @@ defineExpose({ close, openAt });
   background: var(--bg-elevated);
   color: var(--text-primary);
   box-shadow: var(--shadow-popover);
+  max-inline-size: calc(100vw - 16px);
   max-block-size: min(70dvh, 520px);
   overflow: auto;
   opacity: 0;

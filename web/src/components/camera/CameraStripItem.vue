@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Thumbnail of another camera, showing a refreshing still and activity. */
+/** Thumbnail of a camera in the strip, showing a refreshing still and activity. */
 import { computed } from "vue";
 import { cameraLabel } from "@/composables/useFrigate";
 import { useCameraActivity } from "@/composables/useCameraActivity";
@@ -7,7 +7,7 @@ import type { CameraConfig } from "@/types/frigate";
 import CameraStill from "@/components/player/CameraStill.vue";
 import StatusDot from "@/components/ui/StatusDot.vue";
 
-const props = defineProps<{ camera: CameraConfig }>();
+const props = defineProps<{ camera: CameraConfig; current?: boolean }>();
 const activity = useCameraActivity(() => props.camera.name);
 const name = computed(() => cameraLabel(props.camera));
 const aspect = computed(() => {
@@ -23,7 +23,11 @@ const busy = computed(
   <button
     type="button"
     class="strip-item"
-    :class="{ 'has-alert': activity.activeTracking.value }"
+    :class="{
+      'has-alert': activity.activeTracking.value,
+      'is-current': current,
+    }"
+    :aria-current="current || undefined"
     :style="{ '--aspect': aspect }"
     :title="name"
   >
@@ -62,6 +66,16 @@ const busy = computed(
 
   &.has-alert {
     border-color: color-mix(in srgb, var(--alert-amber) 50%, transparent);
+  }
+
+  &.is-current {
+    border-color: var(--selected-border);
+    box-shadow: 0 0 0 1px var(--selected-border);
+    cursor: default;
+
+    &:hover {
+      translate: none;
+    }
   }
 }
 

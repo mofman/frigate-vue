@@ -222,6 +222,8 @@ async function snapshot() {
 .camera-tile {
   container: tile / inline-size;
   position: relative;
+  /* keep the overlay z-indexes inside, below the pinned page header */
+  isolation: isolate;
   /* set by CameraGrid so every tile fits on screen */
   inline-size: var(--tile-width, 100%);
   max-inline-size: 100%;

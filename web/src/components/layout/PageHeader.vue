@@ -54,9 +54,17 @@ defineProps<{ title?: string }>();
 }
 
 @media (max-width: 768px) {
+  /*
+   * the document scrolls on phones; pinning an opaque header to the top lets
+   * iOS tint its top bar to match instead of fading the page out under it
+   */
   .page-header {
+    position: sticky;
+    inset-block-start: 0;
     flex-wrap: wrap;
     padding: 12px 14px;
+    background: var(--bg-base);
+    backdrop-filter: none;
   }
 
   .page-header__end {

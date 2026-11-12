@@ -458,6 +458,8 @@ defineExpose({ stage: stageRef, activeVideo, activeFrame, layer: visible });
 .stage-frame {
   container-type: size;
   position: relative;
+  /* keep the overlay z-indexes inside, below the pinned page header */
+  isolation: isolate;
   display: grid;
   place-items: center;
   inline-size: 100%;

@@ -1,23 +1,23 @@
 <script setup lang="ts">
-/** Row of other cameras under the stage. Clicking one switches the stage. */
-import { computed } from "vue";
+/**
+ * Row of every camera under the stage, in config order. The camera on the stage
+ * stays in place and is marked current, so switching never reshuffles the row.
+ */
 import type { CameraConfig } from "@/types/frigate";
 import CameraStripItem from "./CameraStripItem.vue";
 
-const props = defineProps<{ cameras: CameraConfig[]; current: string }>();
+defineProps<{ cameras: CameraConfig[]; current: string }>();
 const emit = defineEmits<{ select: [camera: string] }>();
-const others = computed(() =>
-  props.cameras.filter((camera) => camera.name !== props.current),
-);
 </script>
 
 <template>
-  <div v-if="others.length" class="camera-strip">
+  <div v-if="cameras.length > 1" class="camera-strip">
     <CameraStripItem
-      v-for="camera in others"
+      v-for="camera in cameras"
       :key="camera.name"
       :camera="camera"
-      @click="emit('select', camera.name)"
+      :current="camera.name === current"
+      @click="camera.name !== current && emit('select', camera.name)"
     />
   </div>
 </template>

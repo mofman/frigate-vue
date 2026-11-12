@@ -122,6 +122,11 @@ watchEffect(() => {
   const el = container.value;
   const current = session.value;
   if (!el || !current) return;
+  // released sessions linger in the pool with their element still attached
+  // here; drop them so a warm session reused later is not painted underneath
+  for (const child of [...el.children]) {
+    if (child !== current.element) child.remove();
+  }
   if (current.element.parentElement !== el) el.appendChild(current.element);
 });
 
