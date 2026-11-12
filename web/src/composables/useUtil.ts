@@ -56,9 +56,21 @@ export function usePersistedRef<T>(key: string, initial: T): Ref<T> {
   return value;
 }
 
-export function useFullscreen(target: Ref<HTMLElement | null | undefined>) {
+type WebkitVideo = HTMLVideoElement & { webkitEnterFullscreen?: () => void };
+
+/**
+ * Element fullscreen. iPhone Safari has no element fullscreen, only the native
+ * video player's, so pass `video` to fall back to that where it is missing.
+ */
+export function useFullscreen(
+  target: Ref<HTMLElement | null | undefined>,
+  video?: () => HTMLVideoElement | undefined,
+) {
   const isFullscreen = shallowRef(!!document.fullscreenElement);
-  const supported = !!document.documentElement.requestFullscreen;
+  const native = !!document.documentElement.requestFullscreen;
+  const supported =
+    native ||
+    (!!video && "webkitEnterFullscreen" in HTMLVideoElement.prototype);
   const onChange = () => (isFullscreen.value = !!document.fullscreenElement);
   document.addEventListener("fullscreenchange", onChange);
   onScopeDispose(() =>
@@ -66,7 +78,9 @@ export function useFullscreen(target: Ref<HTMLElement | null | undefined>) {
   );
 
   const toggle = async () => {
-    if (document.fullscreenElement) {
+    if (!native) {
+      (video?.() as WebkitVideo | undefined)?.webkitEnterFullscreen?.();
+    } else if (document.fullscreenElement) {
       await document.exitFullscreen();
     } else {
       await (target.value ?? document.documentElement).requestFullscreen();

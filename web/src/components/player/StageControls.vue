@@ -89,7 +89,6 @@ const live = computed(() => props.playback.isLive.value);
   &[data-mode="recording"] {
     inset-block-end: 0;
     justify-content: center;
-    /* centres the 42px bar on the 34px PiP button in the overlay corner */
     padding-block-end: 6px;
   }
 }

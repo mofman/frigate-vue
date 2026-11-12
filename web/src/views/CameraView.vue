@@ -6,8 +6,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ArrowLeft, ChevronDown, PictureInPicture2, Video } from "@lucide/vue";
-import OverlayButton from "@/components/ui/OverlayButton.vue";
+import { ArrowLeft, ChevronDown, Video } from "@lucide/vue";
 import PageHeader from "@/components/layout/PageHeader.vue";
 import CameraStage from "@/components/player/CameraStage.vue";
 import ModeBadge from "@/components/player/ModeBadge.vue";
@@ -38,7 +37,6 @@ import { usePtz } from "@/composables/usePtz";
 import PtzClickLayer from "@/components/player/PtzClickLayer.vue";
 import PtzPanel from "@/components/player/PtzPanel.vue";
 import { cameraStreams } from "@/players/streams";
-import { pipSupported, togglePip } from "@/utils/pip";
 import { saveSnapshot } from "@/utils/snapshot";
 import { REVIEW_PADDING, reviewStart } from "@/utils/review";
 import CameraActions from "@/components/camera/CameraActions.vue";
@@ -171,7 +169,6 @@ const stageRef = shallowRef<InstanceType<typeof CameraStage> | null>(null);
 const manual = useManualRecording(() => props.name);
 const recordingNow = computed(() => !!manual.eventId.value);
 const snapshotBusy = shallowRef(false);
-const supportsPip = pipSupported();
 
 const audioStream = computed(
   () =>
@@ -247,10 +244,6 @@ async function takeSnapshot() {
   }
 }
 
-function togglePictureInPicture() {
-  void togglePip(stageRef.value?.activeVideo());
-}
-
 // ---- url sync --------------------------------------------------------------
 
 watch(playback.seekRequest, (request) => {
@@ -280,7 +273,7 @@ const {
   isFullscreen,
   supported: supportsFullscreen,
   toggle: toggleFullscreen,
-} = useFullscreen(stageColumn);
+} = useFullscreen(stageColumn, () => stageRef.value?.activeVideo());
 const desktop = useMediaQuery("(min-width: 769px)");
 const wide = useMediaQuery("(min-width: 1380px)");
 
@@ -481,13 +474,6 @@ function onSwitched(kind: string, ms: number) {
                   v-model:click-move="clickMove"
                   :ptz="ptz"
                 />
-                <OverlayButton
-                  v-if="supportsPip"
-                  size="md"
-                  :label="t('player.pip')"
-                  @click="togglePictureInPicture"
-                  ><PictureInPicture2
-                /></OverlayButton>
               </template>
             </CameraOverlay>
             <div class="camera-view__controls">
