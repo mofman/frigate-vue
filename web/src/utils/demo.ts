@@ -9,18 +9,8 @@ import { baseUrl } from "@/api/baseUrl";
 
 const STORAGE_KEY = "frigate-demo";
 
-const DEMO_NAMES = [
-  "Driveway",
-  "Front Yard",
-  "Porch",
-  "Pool",
-  "Back Garden",
-  "Back Yard",
-  "Patio",
-  "Side Yard",
-  "Terrace",
-  "Hallway",
-];
+/** one name per stock still in public/demo, in the same order */
+const DEMO_NAMES = ["Entrance", "Loading Yard", "Car Park", "High Street"];
 
 function readDemoFlag(): boolean {
   const param = new URLSearchParams(window.location.search).get("demo");
@@ -71,5 +61,5 @@ export function applyDemoConfig(config: unknown) {
 /** Stock still standing in for a camera's frames. */
 export function demoImage(camera: string): string {
   const index = demoIndex.get(camera) ?? 0;
-  return `${baseUrl}demo/camera-${(index % DEMO_NAMES.length) + 1}.webp`;
+  return `${baseUrl}demo/camera-${(index % DEMO_NAMES.length) + 1}.jpg`;
 }
