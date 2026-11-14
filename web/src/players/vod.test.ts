@@ -61,12 +61,12 @@ describe("vodWindow", () => {
   it("aligns to the hour and never extends past now", () => {
     const now = 10 * 3600 + 1200;
     expect(vodWindow(10 * 3600 + 600, now)).toEqual({
-      after: 9 * 3600,
+      after: 9.5 * 3600,
       before: now,
     });
     expect(vodWindow(5 * 3600 + 10, now)).toEqual({
-      after: 4 * 3600,
-      before: 7 * 3600,
+      after: 4.5 * 3600,
+      before: 6.5 * 3600,
     });
   });
 

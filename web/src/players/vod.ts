@@ -81,16 +81,21 @@ export function nextRecorded(
   return undefined;
 }
 
-export const VOD_WINDOW = 60 * 60;
+/** Padding loaded on each side of the target hour. */
+export const VOD_PADDING = 30 * 60;
 
 /**
- * Window of recordings to load for a target time: up to an hour each side,
- * never past `now`. Aligned to the hour so consecutive seeks within the same
- * hour reuse the same playlist.
+ * Window of recordings to load for a target time: the target hour plus half
+ * an hour each side, never past `now`. Aligned to the hour so consecutive
+ * seeks within the same hour reuse the same playlist.
+ *
+ * Kept at two hours because nginx-vod caps a mapping at 1080 clips. Frigate
+ * writes 10s segments, so a three hour window is exactly 1080 and any
+ * segment straddling an edge tips it over, which nginx answers with a 503.
  */
 export function vodWindow(target: number, now: number) {
   const hour = Math.floor(target / 3600) * 3600;
-  const after = hour - VOD_WINDOW;
-  const before = Math.min(hour + 2 * VOD_WINDOW, Math.floor(now));
+  const after = hour - VOD_PADDING;
+  const before = Math.min(hour + 3600 + VOD_PADDING, Math.floor(now));
   return { after, before };
 }

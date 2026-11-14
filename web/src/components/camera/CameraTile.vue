@@ -4,7 +4,7 @@
  * in on its first frame. In smart mode the stream only runs while there is
  * activity (and briefly after), which keeps big dashboards cheap.
  */
-import { computed, onBeforeUnmount, shallowRef, watch } from "vue";
+import { computed, inject, onBeforeUnmount, shallowRef, watch } from "vue";
 import { Camera, CircleDot, CircleStop, Expand } from "@lucide/vue";
 import { cameraLabel } from "@/composables/useFrigate";
 import { useCameraActivity } from "@/composables/useCameraActivity";
@@ -24,6 +24,7 @@ import CameraName from "./CameraName.vue";
 import CameraOverlay from "./CameraOverlay.vue";
 import CameraTimestamp from "./CameraTimestamp.vue";
 import { demoMode } from "@/utils/demo";
+import { gridRectsKey } from "./gridContext";
 
 const props = withDefaults(
   defineProps<{
@@ -107,6 +108,19 @@ const aspect = computed(() => {
   return width && height ? width / height : 16 / 9;
 });
 
+const gridRects = inject(gridRectsKey, undefined);
+const gridRect = computed(() => gridRects?.value.get(props.camera.name));
+const placement = computed(() => {
+  const rect = gridRect.value;
+  if (!rect) return {};
+  return {
+    insetInlineStart: `${rect.x}px`,
+    insetBlockStart: `${rect.y}px`,
+    inlineSize: `${rect.width}px`,
+    blockSize: `${rect.height}px`,
+  };
+});
+
 const name = computed(() => cameraLabel(props.camera));
 const dotState = computed(() =>
   activity.offline.value || !activity.enabled.value
@@ -137,8 +151,13 @@ async function snapshot() {
       // motion alone lights the border too, as in the previous UI
       'has-alert': busy,
       'is-offline': activity.offline.value,
+      'is-placed': !!gridRect,
     }"
-    :style="{ '--aspect': aspect, viewTransitionName: transitionName }"
+    :style="{
+      '--aspect': aspect,
+      viewTransitionName: transitionName,
+      ...placement,
+    }"
     tabindex="0"
     role="button"
     :aria-label="t('dashboard.openCamera', { camera: name })"
@@ -226,8 +245,7 @@ async function snapshot() {
   position: relative;
   /* keep the overlay z-indexes inside, below the pinned page header */
   isolation: isolate;
-  /* set by CameraGrid so every tile fits on screen */
-  inline-size: var(--tile-width, 100%);
+  inline-size: 100%;
   max-inline-size: 100%;
   aspect-ratio: var(--aspect);
   overflow: hidden;
@@ -243,6 +261,13 @@ async function snapshot() {
   &:hover {
     border-color: var(--line-hover-soft);
     box-shadow: var(--shadow-card-hover);
+  }
+
+  /* CameraGrid's fit-all layout positions and sizes the tile */
+  &.is-placed {
+    position: absolute;
+    max-inline-size: none;
+    aspect-ratio: auto;
   }
 
   &.has-alert {
