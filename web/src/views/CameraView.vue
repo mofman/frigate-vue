@@ -223,7 +223,9 @@ watch(selection.previewing, (previewing) => {
 watch(playback.time, (time) => {
   if (!selection.previewing.value || playback.scrubbing.value) return;
   const { start, end } = selection.range.value;
-  if (time >= end || time < start - 1) playback.seek(start, true);
+  // the loop wrapping round is not the user moving the playhead
+  if (time >= end || time < start - 1)
+    playback.seek(start, true, { reveal: false });
 });
 watch(playback.mode, (mode) => {
   // a clip that ends at the live edge cannot loop, the stage went live

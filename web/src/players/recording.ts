@@ -101,7 +101,10 @@ export class RecordingPlayer {
 
     video.addEventListener("timeupdate", () => {
       this.setBuffering(false);
-      if (!this.source) return;
+      // until a new source has landed on its target, the element's position
+      // still belongs to the old one, or is the 0 it resets to while hls.js
+      // swaps the media source, and maps to the wrong time
+      if (!this.source || this.pendingSeek) return;
       const ts = timestampAt(
         video.currentTime,
         this.source.spans,

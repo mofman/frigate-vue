@@ -75,6 +75,7 @@ Legend: `[x]` done, `[ ]` to do, `[~]` partly done (see note).
 - [x] Camera switching inside the view keeps the page mounted and the timestamp
 - [x] Canvas timeline: motion, recording gaps, review spans, ticks; hourly cached data
 - [x] Playhead dragging with auto-scroll, tap to seek on touch, zoom levels
+- [x] Timeline follows the playhead on a hold line (track slides beneath it), scrolling detaches, jump pill to return; clicks land exactly, edge auto-scroll only while dragging
 - [x] Keyboard: space, left / right arrows, L for live, F for fullscreen
 - [x] Stage controls: play / pause / skip, jump to live, detect / record / snapshot toggles, mute, stream picker, low bandwidth, background play, fullscreen
 - [x] Camera strip follows the stage: smart live thumbnails while live, preview frames at the same moment while playing or scrubbing a recording

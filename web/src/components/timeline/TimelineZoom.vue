@@ -35,5 +35,12 @@ const { t } = useT(["views/app", "views/events"]);
   display: flex;
   justify-content: center;
   gap: 8px;
+  /* the row spans the timeline: only the buttons take clicks, the track
+     beside them still seeks */
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
 }
 </style>

@@ -12,6 +12,14 @@ import {
 
 export type SeekRequest = { id: number; time: number; play: boolean };
 
+export type SeekOptions = {
+  /**
+   * The user moved the playhead, so views showing it should bring it into
+   * view. Off for seeks the player makes on its own, eg looping a preview.
+   */
+  reveal?: boolean;
+};
+
 export function usePlayback(
   options: { initialMode?: PlaybackMode; initialTime?: number } = {},
 ) {
@@ -34,6 +42,8 @@ export function usePlayback(
   });
   /** earliest time the timeline allows */
   const earliest = shallowRef(now() - 24 * 3600);
+  /** bumped whenever the user moves the playhead (seek, scrub, go live) */
+  const revealRequest = shallowRef(0);
 
   let wasPlaying = true;
 
@@ -41,7 +51,7 @@ export function usePlayback(
     seekRequest.value = { id: seekRequest.value.id + 1, time: target, play };
   }
 
-  function goLive() {
+  function enterLive() {
     scrubbing.value = false;
     mode.value = "live";
     playing.value = true;
@@ -49,11 +59,21 @@ export function usePlayback(
     time.value = now();
   }
 
+  function goLive() {
+    enterLive();
+    revealRequest.value++;
+  }
+
   /** Jump to a time. Lands in live when the target is close enough to now. */
-  function seek(target: number, play = true) {
+  function seek(
+    target: number,
+    play = true,
+    { reveal = true }: SeekOptions = {},
+  ) {
+    if (reveal) revealRequest.value++;
     const next = modeForTarget(mode.value, target, now(), recordedUntil.value);
     if (next === "live") {
-      goLive();
+      enterLive();
       return;
     }
     mode.value = "recording";
@@ -96,8 +116,8 @@ export function usePlayback(
   /** Recorded media ran out at the window end. */
   function reportEnded() {
     // caught up with the edge of recordings, the natural next frame is live
-    if (now() - time.value < 60) goLive();
-    else seek(time.value + 1, true);
+    if (now() - time.value < 60) enterLive();
+    else seek(time.value + 1, true, { reveal: false });
   }
 
   return {
@@ -108,6 +128,7 @@ export function usePlayback(
     scrubbing: readonly(scrubbing),
     scrubTime: readonly(scrubTime),
     seekRequest: readonly(seekRequest),
+    revealRequest: readonly(revealRequest),
     recordedUntil,
     earliest,
     /** the time the UI should display: scrub target while dragging */

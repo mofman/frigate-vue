@@ -101,7 +101,8 @@
   },
   "timeline": {
     "label": "Timeline",
-    "live": "Live"
+    "live": "Live",
+    "jumpToPlayhead": "Back to the playhead, {{time}}"
   },
   "review": {
     "title": "Review",
