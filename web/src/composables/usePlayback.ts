@@ -42,7 +42,7 @@ export function usePlayback(
   });
   /** earliest time the timeline allows */
   const earliest = shallowRef(now() - 24 * 3600);
-  /** bumped whenever the user moves the playhead (seek, scrub, go live) */
+  /** bumped whenever the user moves the playhead or plays (seek, scrub, go live, play) */
   const revealRequest = shallowRef(0);
 
   let wasPlaying = true;
@@ -107,6 +107,8 @@ export function usePlayback(
 
   function setPlaying(value: boolean) {
     playing.value = value;
+    // pressing play means watching the playhead again, so bring it back
+    if (value) revealRequest.value++;
   }
 
   function setRate(value: number) {

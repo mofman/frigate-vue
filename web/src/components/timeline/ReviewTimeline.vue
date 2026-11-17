@@ -136,6 +136,7 @@ function paint() {
     buckets: timeline.buckets(),
     reviews: props.reviews,
     palette,
+    dpr,
     formatLabel: (time, withSeconds) =>
       formatTime(time, {
         timezone: resolveTimezone(config.value?.ui?.timezone),

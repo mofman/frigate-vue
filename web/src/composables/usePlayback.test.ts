@@ -33,6 +33,17 @@ describe("usePlayback revealRequest", () => {
     expect(playback.revealRequest.value).toBe(2);
   });
 
+  it("is bumped by pressing play, not pause", () => {
+    const playback = usePlayback({
+      initialMode: "recording",
+      initialTime: now - 3600,
+    });
+    playback.setPlaying(false);
+    expect(playback.revealRequest.value).toBe(0);
+    playback.setPlaying(true);
+    expect(playback.revealRequest.value).toBe(1);
+  });
+
   it("is left alone by seeks the player makes on its own", () => {
     const playback = usePlayback();
     playback.seek(now - 3600);

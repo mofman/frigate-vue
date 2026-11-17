@@ -79,6 +79,8 @@ export type DrawInput = {
   buckets: Bucket[];
   reviews: ReviewSegment[];
   palette: Palette;
+  /** device pixels per css pixel, marks are snapped to them */
+  dpr?: number;
   formatLabel: (time: number, withSeconds: boolean) => string;
 };
 
@@ -109,8 +111,13 @@ export function draw(ctx: CanvasRenderingContext2D, input: DrawInput) {
     palette,
   } = input;
   const bottomTime = topTime - height * spp;
-  const y = (time: number) => (topTime - time) / spp;
   const segment = ROW * spp;
+  // move the whole picture in whole device pixels: marks sit on row
+  // boundaries, so a fractional scroll offset would smear every edge across
+  // a pixel and make the bars shimmer as the timeline scrolls
+  const dpr = input.dpr ?? 1;
+  const origin = Math.round((topTime / spp) * dpr) / dpr;
+  const y = (time: number) => origin - time / spp;
   const half = segment / 2;
   const centre = Math.round(width / 2);
 
@@ -143,9 +150,10 @@ export function draw(ctx: CanvasRenderingContext2D, input: DrawInput) {
         : review.severity === "detection"
           ? palette.detection
           : palette.significant;
-    // snap to whole rows so bands line up with the ticks
-    const y1 = Math.floor(y(end) / ROW) * ROW;
-    const y2 = Math.ceil(y(review.start_time) / ROW) * ROW;
+    // snap to whole rows of the timeline (not of the view) so bands line up
+    // with the ticks and keep their size while scrolling
+    const y1 = y(Math.ceil(end / segment) * segment);
+    const y2 = y(Math.floor(review.start_time / segment) * segment);
     const gradient = ctx.createLinearGradient(0, 0, width, 0);
     gradient.addColorStop(0, dim);
     gradient.addColorStop(1, full);
@@ -173,9 +181,10 @@ export function draw(ctx: CanvasRenderingContext2D, input: DrawInput) {
     const barY = y(t + half) + 1;
     const level = motion.get(t);
     if (level) {
+      // even widths keep both ends on whole pixels around the centre
       const w = Math.max(
         2,
-        Math.round((MOTION_MAX * Math.min(level, 100)) / 100),
+        2 * Math.round((MOTION_MAX * Math.min(level, 100)) / 200),
       );
       ctx.fillStyle = palette.motion;
       roundRect(ctx, centre - w / 2, barY, w, 2);
@@ -194,7 +203,7 @@ export function draw(ctx: CanvasRenderingContext2D, input: DrawInput) {
   for (let t = firstRow; t > bottomTime - segment; t -= segment) {
     if (t < input.earliest) break;
     // the tick sits on the bottom edge of the row that starts at t
-    const ty = Math.round(y(t)) - 2;
+    const ty = y(t) - 2;
     let tickWidth = 5;
     ctx.fillStyle = palette.tickFaint;
     if (t % zoom.label === 0) {
