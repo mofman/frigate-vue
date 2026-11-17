@@ -6,6 +6,7 @@ import { CheckCheck } from "@lucide/vue";
 import PageHeader from "@/components/layout/PageHeader.vue";
 import CameraFilter from "@/components/review/CameraFilter.vue";
 import ReviewCard from "@/components/review/ReviewCard.vue";
+import { reviewRange } from "@/utils/exportRange";
 import SeverityTabs from "@/components/review/SeverityTabs.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import IconButton from "@/components/ui/IconButton.vue";
@@ -144,6 +145,19 @@ function open(review: ReviewSegment) {
   });
 }
 
+/** Open the camera with this item already selected for export. */
+function exportReview(review: ReviewSegment) {
+  const { start, end } = reviewRange(review, Date.now() / 1000);
+  void router.push({
+    name: "camera",
+    params: { name: review.camera },
+    query: {
+      t: Math.floor(start),
+      export: `${Math.floor(start)},${Math.ceil(end)}`,
+    },
+  });
+}
+
 function patchLocal(ids: string[], reviewed: boolean) {
   if (!listKey.value) return;
   mutate<ReviewSegment[]>(listKey.value, (current) =>
@@ -215,6 +229,7 @@ async function markAll() {
             :key="review.id"
             :review="review"
             @open="open(review)"
+            @export="exportReview(review)"
             @toggle-reviewed="toggleReviewed(review)"
           />
         </div>

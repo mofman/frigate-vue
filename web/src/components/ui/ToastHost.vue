@@ -8,16 +8,28 @@ const toasts = useToasts();
 <template>
   <div class="toast-host" role="status" aria-live="polite">
     <TransitionGroup name="toast">
-      <button
+      <div
         v-for="toast in toasts"
         :key="toast.id"
-        type="button"
         class="toast"
         :class="`is-${toast.tone}`"
-        @click="dismissToast(toast.id)"
       >
-        {{ toast.message }}
-      </button>
+        <button
+          type="button"
+          class="toast__message"
+          @click="dismissToast(toast.id)"
+        >
+          {{ toast.message }}
+        </button>
+        <RouterLink
+          v-if="toast.action"
+          class="toast__action"
+          :to="toast.action.to"
+          @click="dismissToast(toast.id)"
+        >
+          {{ toast.action.label }}
+        </RouterLink>
+      </div>
     </TransitionGroup>
   </div>
 </template>
@@ -35,15 +47,15 @@ const toasts = useToasts();
 }
 
 .toast {
+  display: flex;
+  align-items: center;
   max-inline-size: min(420px, calc(100vw - 32px));
-  padding: 10px 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--glass-border);
   background: var(--bg-elevated);
   box-shadow: var(--shadow-popover);
   color: var(--text-primary);
   font-size: var(--text-md);
-  text-align: start;
   pointer-events: auto;
 
   &.is-success {
@@ -52,6 +64,25 @@ const toasts = useToasts();
 
   &.is-error {
     border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  }
+}
+
+.toast__message {
+  padding: 10px 14px;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+
+.toast__action {
+  padding: 10px 14px;
+  border-inline-start: 1px solid var(--glass-border);
+  color: var(--accent-text);
+  font-weight: 600;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--accent-text-hover);
   }
 }
 

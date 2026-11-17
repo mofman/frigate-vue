@@ -29,6 +29,12 @@ export const router = createRouter({
       component: () => import("@/views/ReviewView.vue"),
     },
     {
+      // not /exports, which the server uses for the exported files themselves
+      path: "/export",
+      name: "exports",
+      component: () => import("@/views/ExportsView.vue"),
+    },
+    {
       path: "/system",
       name: "system",
       component: () => import("@/views/SystemView.vue"),

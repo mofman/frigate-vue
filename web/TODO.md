@@ -80,6 +80,7 @@ Legend: `[x]` done, `[ ]` to do, `[~]` partly done (see note).
 - [x] Camera strip follows the stage: smart live thumbnails while live, preview frames at the same moment while playing or scrubbing a recording
 - [x] Date range beyond the last 24 hours
 - [x] Export and share-timestamp actions
+- [x] Export selection on the timeline: draggable start / end grips, export bar with presets, name, stream and extra cameras, preview loop, E / I / O keys, one-click export of a review item
 - [x] Timeline / Events / Detail side panel
 - [ ] Debug replay
 - [x] PTZ controls (pad, presets, click and box zoom, keyboard)
@@ -151,7 +152,8 @@ These were removed with the React app and can be recovered from git history
 Those with a sidebar slot show as disabled items until they land.
 
 - [ ] Explore (search, tracked object details, semantic search)
-- [ ] Exports
+- [x] Exports (list grouped by case, live job progress, play, download, share, rename, delete)
+  - [ ] Case management: create, edit, delete, move exports between cases
 - [ ] Settings (UI settings, camera settings, masks / zones, users, notifications, enrichments)
 - [ ] Face library, classification models
 - [ ] Chat

@@ -120,23 +120,6 @@ test.describe("camera stage controls", () => {
       .toBe(0.5);
   });
 
-  test("actions export a clip", async ({ frigateApp }) => {
-    const page = frigateApp.page;
-    let exported = "";
-    await page.route("**/api/export/front_door/start/**", (route) => {
-      exported = route.request().url();
-      return route.fulfill({ json: { success: true, export_id: "x" } });
-    });
-    await frigateApp.goto("/camera/front_door");
-    await page.getByRole("button", { name: "Actions" }).click();
-    await page.getByRole("menuitemradio", { name: "Export clip" }).click();
-    await page.getByRole("radio", { name: "Last 4 hours" }).click();
-    await page.getByRole("button", { name: "Export", exact: true }).click();
-    await expect(page.getByText("Export started")).toBeVisible();
-    const [, start, end] = exported.match(/start\/(\d+)\/end\/(\d+)/)!;
-    expect(Number(end) - Number(start)).toBe(4 * 3600);
-  });
-
   test("side panel tabs switch between timeline, events and detail", async ({
     frigateApp,
   }) => {

@@ -6,6 +6,8 @@
 import { computed } from "vue";
 import { baseUrl } from "@/api/baseUrl";
 import { useQuery } from "@/api/query";
+import { Download } from "@lucide/vue";
+import AppButton from "@/components/ui/AppButton.vue";
 import DetectionTag from "@/components/ui/DetectionTag.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import { useConfig } from "@/composables/useFrigate";
@@ -27,7 +29,10 @@ type TrackedObject = {
 };
 
 const props = defineProps<{ review?: ReviewSegment }>();
-const emit = defineEmits<{ seek: [time: number] }>();
+const emit = defineEmits<{
+  seek: [time: number];
+  export: [review: ReviewSegment];
+}>();
 const { t } = useT(["views/app", "objects", "views/events"]);
 const { data: config } = useConfig();
 const timezone = computed(() => resolveTimezone(config.value?.ui?.timezone));
@@ -105,6 +110,15 @@ function score(obj: TrackedObject) {
         </dd>
       </dl>
 
+      <AppButton
+        class="review-detail__export"
+        size="sm"
+        @click="emit('export', review)"
+      >
+        <template #icon><Download /></template>
+        {{ t("review.export") }}
+      </AppButton>
+
       <h3 v-if="tracked.length" class="review-detail__title">
         {{ t("toolbar.trackedObjects") }}
       </h3>
@@ -164,6 +178,10 @@ function score(obj: TrackedObject) {
   object-fit: cover;
   border-radius: var(--radius-sm);
   background: var(--bg-media);
+}
+
+.review-detail__export {
+  justify-self: start;
 }
 
 .review-detail__head {

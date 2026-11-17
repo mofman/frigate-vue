@@ -4,7 +4,7 @@
  * starts instantly because it is preloaded once the card scrolls into view.
  */
 import { computed, onBeforeUnmount, onMounted, shallowRef } from "vue";
-import { Check } from "@lucide/vue";
+import { Check, Download } from "@lucide/vue";
 import { cameraLabel, useCamera, useConfig } from "@/composables/useFrigate";
 import { useT } from "@/composables/useT";
 import DetectionTag from "@/components/ui/DetectionTag.vue";
@@ -13,7 +13,7 @@ import { formatDuration, formatTime, resolveTimezone } from "@/utils/time";
 import { reviewPreview, reviewThumb } from "@/utils/review";
 
 const props = defineProps<{ review: ReviewSegment; selected?: boolean }>();
-defineEmits<{ open: []; toggleReviewed: [] }>();
+defineEmits<{ open: []; toggleReviewed: []; export: [] }>();
 
 const { t } = useT(["views/app", "objects"]);
 const camera = useCamera(() => props.review.camera);
@@ -132,6 +132,15 @@ const duration = computed(() =>
             :text="t(`objects:${label}`, { defaultValue: label })"
           />
         </div>
+        <button
+          type="button"
+          class="review-card__mark review-card__export"
+          :aria-label="t('review.export')"
+          :title="t('review.export')"
+          @click="$emit('export')"
+        >
+          <Download :size="14" />
+        </button>
         <button
           type="button"
           class="review-card__mark"
@@ -271,6 +280,11 @@ const duration = computed(() =>
   flex-wrap: wrap;
   gap: 6px;
   min-inline-size: 0;
+}
+
+/* sits beside the reviewed toggle at the end of the row */
+.review-card__export {
+  margin-inline-start: auto;
 }
 
 .review-card__mark {

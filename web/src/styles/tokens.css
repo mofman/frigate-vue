@@ -73,6 +73,11 @@
     --danger-surface: rgb(239 68 68 / 0.1);
     --playhead: #9d1b1e;
 
+    /* export selection on the timeline */
+    --export: var(--accent-strong);
+    --export-surface: rgb(92 120 255 / 0.2);
+    --export-scrim: rgb(5 6 7 / 0.5);
+
     --vehicle: #94a3b8;
     --vehicle-glow: rgb(148 163 184 / 0.2);
     --vehicle-surface: rgb(148 163 184 / 0.11);

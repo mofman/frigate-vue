@@ -13,7 +13,10 @@ const props = defineProps<{
   /** id of the item under the playhead */
   current?: string;
 }>();
-const emit = defineEmits<{ open: [review: ReviewSegment] }>();
+const emit = defineEmits<{
+  open: [review: ReviewSegment];
+  export: [review: ReviewSegment];
+}>();
 const { t } = useT(["views/app"]);
 
 const sorted = computed(() =>
@@ -49,6 +52,7 @@ async function toggleReviewed(review: ReviewSegment) {
       :review="review"
       :selected="review.id === current"
       @open="emit('open', review)"
+      @export="emit('export', review)"
       @toggle-reviewed="toggleReviewed(review)"
     />
     <EmptyState v-if="!sorted.length" :title="t('toolbar.noEvents')" />

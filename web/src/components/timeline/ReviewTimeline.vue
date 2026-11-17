@@ -12,6 +12,7 @@
 import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from "vue";
 import { useConfig } from "@/composables/useFrigate";
 import { useElementSize, useNow } from "@/composables/useUtil";
+import type { ExportSelection } from "@/composables/useExportSelection";
 import type { Playback } from "@/composables/usePlayback";
 import { useTimelineData } from "@/composables/useTimelineData";
 import { useT } from "@/composables/useT";
@@ -25,12 +26,15 @@ import {
   type Palette,
 } from "./timelineDraw";
 import TimelineHandle from "./TimelineHandle.vue";
+import TimelineSelection, { type SelectionEdge } from "./TimelineSelection.vue";
 import TimelineZoom from "./TimelineZoom.vue";
 
 const props = defineProps<{
   camera: string;
   playback: Playback;
   reviews: ReviewSegment[];
+  /** the clip being picked for export, drawn as a band with two grips */
+  selection?: ExportSelection;
 }>();
 
 const { t } = useT(["views/app"]);
@@ -208,7 +212,11 @@ function setZoom(index: number) {
 
 // ---- scrubbing -------------------------------------------------------------
 
+type DragTarget = "track" | "playhead" | SelectionEdge;
+
 const dragging = shallowRef(false);
+/** what the pointer is moving: the playhead or an edge of the selection */
+let dragTarget: DragTarget = "playhead";
 let pointerId: number | undefined;
 let moved = false;
 let downY = 0;
@@ -222,9 +230,23 @@ function timeFromClient(clientY: number) {
   return timeAt(el.scrollTop + clientY - rect.top);
 }
 
-function startDrag(event: PointerEvent, fromHandle: boolean) {
-  // touch scrolls the timeline unless the drag starts on the playhead
-  if (event.pointerType === "touch" && !fromHandle) {
+/** Move whatever is being dragged to the pointer. */
+function dragTo(clientY: number) {
+  const time = timeFromClient(clientY);
+  const selection = props.selection;
+  if (selection && (dragTarget === "start" || dragTarget === "end")) {
+    if (dragTarget === "start") selection.setStart(time);
+    else selection.setEnd(time);
+    // show the frame the clip will be cut on
+    props.playback.scrubTo(selection.range.value[dragTarget]);
+    return;
+  }
+  props.playback.scrubTo(time);
+}
+
+function startDrag(event: PointerEvent, target: DragTarget) {
+  // touch scrolls the timeline unless the drag starts on a handle
+  if (event.pointerType === "touch" && target === "track") {
     downY = event.clientY;
     moved = false;
     pointerId = undefined;
@@ -235,13 +257,20 @@ function startDrag(event: PointerEvent, fromHandle: boolean) {
   pointerId = event.pointerId;
   (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   dragging.value = true;
+  dragTarget = target;
   moved = false;
   downY = event.clientY;
   lastClientY = event.clientY;
   props.playback.beginScrub();
-  props.playback.scrubTo(
-    fromHandle ? handleTime.value : timeFromClient(event.clientY),
-  );
+  if (target === "start" || target === "end") {
+    // a preview loop would fight the scrub
+    props.selection?.setPreviewing(false);
+    props.playback.scrubTo(props.selection?.range.value[target] ?? 0);
+  } else if (target === "playhead") {
+    props.playback.scrubTo(handleTime.value);
+  } else {
+    dragTo(event.clientY);
+  }
   autoScroll = requestAnimationFrame(autoScrollTick);
 }
 
@@ -249,7 +278,7 @@ function onMove(event: PointerEvent) {
   if (!dragging.value || event.pointerId !== pointerId) return;
   if (Math.abs(event.clientY - downY) > 3) moved = true;
   lastClientY = event.clientY;
-  props.playback.scrubTo(timeFromClient(event.clientY));
+  dragTo(event.clientY);
 }
 
 function endDrag(event: PointerEvent) {
@@ -280,10 +309,66 @@ function autoScrollTick() {
     delta = Math.ceil((lastClientY - rect.bottom + edge) / 4);
   if (delta) {
     el.scrollTop += delta;
-    props.playback.scrubTo(timeFromClient(lastClientY));
+    dragTo(lastClientY);
   }
   autoScroll = requestAnimationFrame(autoScrollTick);
 }
+
+// ---- export selection ------------------------------------------------------
+
+const selectionY = computed(() => {
+  const range = props.selection?.range.value;
+  return range ? { start: yAt(range.start), end: yAt(range.end) } : undefined;
+});
+const timeLabel = (time: number) =>
+  formatTime(time, {
+    timezone: resolveTimezone(config.value?.ui?.timezone),
+    hour12:
+      config.value?.ui?.time_format === "12hour"
+        ? true
+        : config.value?.ui?.time_format === "24hour"
+          ? false
+          : undefined,
+  });
+
+function nudge(edge: SelectionEdge, seconds: number) {
+  const selection = props.selection;
+  if (!selection) return;
+  const time = selection.range.value[edge] + seconds;
+  if (edge === "start") selection.setStart(time);
+  else selection.setEnd(time);
+  props.playback.seek(selection.range.value[edge], false);
+}
+
+/** Bring the selection into view, eg when it opens or a preset is picked. */
+function revealSelection() {
+  const el = scroller.value;
+  const y = selectionY.value;
+  if (!el || !y || dragging.value || !height.value) return;
+  const viewTop = el.scrollTop;
+  const margin = 40;
+  if (y.end >= viewTop + margin && y.start <= viewTop + height.value - margin)
+    return;
+  // hold off the playhead follow so it does not pull the view straight back
+  lastUserScroll = performance.now();
+  const span = y.start - y.end;
+  el.scrollTo({
+    top: Math.max(
+      0,
+      span < height.value - 2 * margin
+        ? y.end - (height.value - span) / 2
+        : y.end - margin,
+    ),
+    behavior: "smooth",
+  });
+}
+watch(
+  [() => props.selection?.active.value, () => props.selection?.range.value],
+  ([active]) => {
+    if (active) revealSelection();
+  },
+  { flush: "post" },
+);
 
 // place the playhead once the timeline has a size, instantly
 const ready = shallowRef(false);
@@ -294,6 +379,7 @@ watch(
     follow(true);
     onScroll();
     ready.value = true;
+    if (props.selection?.active.value) revealSelection();
   },
   { immediate: true },
 );
@@ -304,17 +390,7 @@ onBeforeUnmount(() => {
 });
 
 const futureHeight = computed(() => Math.max(0, yAt(now.value)));
-const handleLabel = computed(() =>
-  formatTime(handleTime.value, {
-    timezone: resolveTimezone(config.value?.ui?.timezone),
-    hour12:
-      config.value?.ui?.time_format === "12hour"
-        ? true
-        : config.value?.ui?.time_format === "24hour"
-          ? false
-          : undefined,
-  }),
-);
+const handleLabel = computed(() => timeLabel(handleTime.value));
 </script>
 
 <template>
@@ -333,7 +409,7 @@ const handleLabel = computed(() =>
       @scroll.passive="onScroll"
       @wheel.passive="markUserScroll"
       @touchmove.passive="markUserScroll"
-      @pointerdown="startDrag($event, false)"
+      @pointerdown="startDrag($event, 'track')"
       @pointermove="onMove"
       @pointerup="endDrag"
       @pointercancel="endDrag"
@@ -346,11 +422,20 @@ const handleLabel = computed(() =>
           class="timeline__future"
           :style="{ blockSize: `${futureHeight}px` }"
         />
+        <TimelineSelection
+          v-if="selection?.active.value && selectionY"
+          :start-y="selectionY.start"
+          :end-y="selectionY.end"
+          :start-label="timeLabel(selection.range.value.start)"
+          :end-label="timeLabel(selection.range.value.end)"
+          @grab="(edge, event) => startDrag(event, edge)"
+          @nudge="nudge"
+        />
         <TimelineHandle
           :y="handleY"
           :label="handleLabel"
           :live="playback.isLive.value"
-          @pointerdown.stop="startDrag($event, true)"
+          @pointerdown.stop="startDrag($event, 'playhead')"
         />
       </div>
     </div>

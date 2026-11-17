@@ -8,6 +8,7 @@ import { Bell, CircleUserRound, Download, Monitor, Search } from "@lucide/vue";
 import logo from "@/assets/logo.svg";
 import { useQuery } from "@/api/query";
 import { onWsMessage } from "@/api/ws";
+import { useExportJobs } from "@/composables/useExportJobs";
 import { useT } from "@/composables/useT";
 import type { ReviewSegment } from "@/types/frigate";
 import SidebarNavItem from "./SidebarNavItem.vue";
@@ -24,6 +25,8 @@ onWsMessage("reviews", () => void refresh());
 
 const alertCount = computed(() => alerts.value?.length ?? 0);
 const soon = computed(() => t("nav.comingSoon"));
+/** exports still being made */
+const { count: exportJobs } = useExportJobs();
 </script>
 
 <template>
@@ -47,10 +50,10 @@ const soon = computed(() => t("nav.comingSoon"));
           :disabled-hint="soon"
         />
         <SidebarNavItem
+          to="/export"
           :icon="Download"
           :label="t('nav.exports')"
-          disabled
-          :disabled-hint="soon"
+          :badge="exportJobs"
         />
       </nav>
     </div>

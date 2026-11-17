@@ -1,6 +1,5 @@
 <script setup lang="ts">
 /** Actions menu for the camera view: export a clip, share this moment. */
-import { shallowRef } from "vue";
 import { Clapperboard, Download, Share2 } from "@lucide/vue";
 import IconButton from "@/components/ui/IconButton.vue";
 import MenuItem from "@/components/ui/MenuItem.vue";
@@ -8,7 +7,6 @@ import PopoverMenu from "@/components/ui/PopoverMenu.vue";
 import { baseUrl } from "@/api/baseUrl";
 import { showToast } from "@/composables/useToast";
 import { useT } from "@/composables/useT";
-import ExportDialog from "./ExportDialog.vue";
 
 const props = defineProps<{
   camera: string;
@@ -16,8 +14,8 @@ const props = defineProps<{
   live: boolean;
   showLabel?: boolean;
 }>();
+const emit = defineEmits<{ export: [] }>();
 const { t } = useT(["views/app"]);
-const exporting = shallowRef(false);
 
 function shareUrl() {
   const time = Math.floor(props.live ? Date.now() / 1000 : props.time);
@@ -53,12 +51,13 @@ async function share() {
     <template #default="{ close }">
       <MenuItem
         @click="
-          exporting = true;
+          emit('export');
           close();
         "
       >
         <template #icon><Download /></template>
         {{ t("toolbar.export") }}
+        <template #hint><kbd>E</kbd></template>
       </MenuItem>
       <MenuItem
         @click="
@@ -71,5 +70,4 @@ async function share() {
       </MenuItem>
     </template>
   </PopoverMenu>
-  <ExportDialog v-model:open="exporting" :camera="camera" :time="time" />
 </template>

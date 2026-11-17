@@ -39,7 +39,16 @@ import PtzPanel from "@/components/player/PtzPanel.vue";
 import { cameraStreams } from "@/players/streams";
 import { saveSnapshot } from "@/utils/snapshot";
 import { REVIEW_PADDING, reviewStart } from "@/utils/review";
+import {
+  defaultRange,
+  parseRangeParam,
+  reviewAt,
+  reviewRange,
+  type ExportRange,
+} from "@/utils/exportRange";
+import { useExportSelection } from "@/composables/useExportSelection";
 import CameraActions from "@/components/camera/CameraActions.vue";
+import ExportBar from "@/components/camera/ExportBar.vue";
 import RangePicker from "@/components/camera/RangePicker.vue";
 import EventList from "@/components/review/EventList.vue";
 import ReviewDetail from "@/components/review/ReviewDetail.vue";
@@ -162,6 +171,73 @@ function openReview(review: ReviewSegment) {
 }
 
 const activity = useCameraActivity(() => props.name);
+
+// ---- export ------------------------------------------------------------------
+
+const selection = useExportSelection(() => props.name, playback);
+const playheadTime = () =>
+  playback.isLive.value ? Date.now() / 1000 : playback.displayTime.value;
+/** the review item the playhead is inside, offered as the clip to export */
+const reviewUnderPlayhead = computed(() =>
+  reviewAt(cameraReviews.value, playheadTime(), Date.now() / 1000),
+);
+
+let panelBeforeExport: Panel | undefined;
+
+/** Start picking a clip on the timeline, from `range` or around the playhead. */
+function openExport(range?: ExportRange) {
+  if (!selection.active.value) {
+    // the selection lives on the timeline, so bring it forward
+    panelBeforeExport = panel.value;
+    panel.value = "timeline";
+  }
+  selection.open(
+    range ??
+      defaultRange({
+        time: playheadTime(),
+        live: playback.isLive.value,
+        bounds: { earliest: playback.earliest.value, now: Date.now() / 1000 },
+        review: reviewUnderPlayhead.value,
+      }),
+  );
+}
+
+function exportReview(review: ReviewSegment) {
+  const range = reviewRange(review, Date.now() / 1000);
+  openExport(range);
+  playback.seek(range.start, true);
+}
+
+watch(selection.active, (active) => {
+  if (active) return;
+  // back to the panel that was open, unless another was picked meanwhile
+  if (panelBeforeExport && panel.value === "timeline")
+    panel.value = panelBeforeExport;
+  panelBeforeExport = undefined;
+});
+
+// preview: loop playback between the two edges
+watch(selection.previewing, (previewing) => {
+  if (previewing) playback.seek(selection.range.value.start, true);
+});
+watch(playback.time, (time) => {
+  if (!selection.previewing.value || playback.scrubbing.value) return;
+  const { start, end } = selection.range.value;
+  if (time >= end || time < start - 1) playback.seek(start, true);
+});
+watch(playback.mode, (mode) => {
+  // a clip that ends at the live edge cannot loop, the stage went live
+  if (mode === "live") selection.setPreviewing(false);
+});
+
+// a link such as ?export=<start>,<end> opens straight into the selection
+onMounted(() => {
+  const range = parseRangeParam(route.query.export);
+  if (!range) return;
+  openExport(range);
+  const { export: _drop, ...rest } = route.query;
+  void router.replace({ query: rest });
+});
 
 // ---- stage actions -------------------------------------------------------
 
@@ -293,6 +369,8 @@ const wide = useMediaQuery("(min-width: 1380px)");
 // ---- keyboard ------------------------------------------------------------------
 
 function onKey(event: KeyboardEvent) {
+  // leave browser and system shortcuts alone
+  if (event.ctrlKey || event.metaKey || event.altKey) return;
   const target = event.target as HTMLElement | null;
   if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
     return;
@@ -333,9 +411,26 @@ function onKey(event: KeyboardEvent) {
       talk.value = !talk.value;
       if (talk.value) muted.value = false;
       break;
+    case "e":
+    case "E":
+      if (selection.active.value) selection.close();
+      else openExport();
+      break;
+    case "i":
+    case "I":
+      if (selection.active.value) selection.setStart(playheadTime());
+      break;
+    case "o":
+    case "O":
+      if (selection.active.value) selection.setEnd(playheadTime());
+      break;
     case "Escape":
       // Escape leaves fullscreen first, the browser handles that
       if (isFullscreen.value || document.querySelector(":popover-open")) return;
+      if (selection.active.value) {
+        selection.close();
+        return;
+      }
       void router.push("/");
       break;
   }
@@ -419,6 +514,7 @@ function onSwitched(kind: string, ms: number) {
           :time="playback.time.value"
           :live="playback.isLive.value"
           :show-label="wide"
+          @export="openExport()"
         />
         <SegmentedToggle
           v-if="desktop"
@@ -513,6 +609,19 @@ function onSwitched(kind: string, ms: number) {
             </div>
           </CameraStage>
         </div>
+        <ExportBar
+          v-if="selection.active.value"
+          :selection="selection"
+          :cameras="cameras"
+          :camera="name"
+          :time="
+            playback.isLive.value
+              ? Date.now() / 1000
+              : playback.displayTime.value
+          "
+          :review="reviewUnderPlayhead"
+          :earliest="playback.earliest.value"
+        />
         <CameraStrip
           v-if="desktop"
           :cameras="cameras"
@@ -536,17 +645,20 @@ function onSwitched(kind: string, ms: number) {
           :camera="name"
           :playback="playback"
           :reviews="cameraReviews"
+          :selection="selection"
         />
         <EventList
           v-else-if="panel === 'events'"
           :reviews="cameraReviews"
           :current="currentReview?.id"
           @open="openReview"
+          @export="exportReview"
         />
         <ReviewDetail
           v-else
           :review="currentReview"
           @seek="playback.seek($event, true)"
+          @export="exportReview"
         />
       </aside>
     </div>
