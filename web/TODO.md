@@ -77,7 +77,7 @@ Legend: `[x]` done, `[ ]` to do, `[~]` partly done (see note).
 - [x] Playhead dragging with auto-scroll, tap to seek on touch, zoom levels
 - [x] Keyboard: space, left / right arrows, L for live, F for fullscreen
 - [x] Stage controls: play / pause / skip, jump to live, detect / record / snapshot toggles, mute, stream picker, low bandwidth, background play, fullscreen
-- [~] Camera strip shows refreshing stills; showing the other cameras at the same recorded time is still to do
+- [x] Camera strip follows the stage: smart live thumbnails while live, preview frames at the same moment while playing or scrubbing a recording
 - [x] Date range beyond the last 24 hours
 - [x] Export and share-timestamp actions
 - [x] Timeline / Events / Detail side panel

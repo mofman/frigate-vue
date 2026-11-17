@@ -4,10 +4,10 @@
  * in on its first frame. In smart mode the stream only runs while there is
  * activity (and briefly after), which keeps big dashboards cheap.
  */
-import { computed, inject, onBeforeUnmount, shallowRef, watch } from "vue";
+import { computed, inject, shallowRef } from "vue";
 import { Camera, CircleDot, CircleStop, Expand } from "@lucide/vue";
 import { cameraLabel } from "@/composables/useFrigate";
-import { useCameraActivity } from "@/composables/useCameraActivity";
+import { useSmartStream } from "@/composables/useSmartStream";
 import { useManualRecording } from "@/composables/useManualRecording";
 import { saveSnapshot } from "@/utils/snapshot";
 import { useStreamAudio } from "@/composables/useStreamAudio";
@@ -23,7 +23,6 @@ import ActivityTags from "./ActivityTags.vue";
 import CameraName from "./CameraName.vue";
 import CameraOverlay from "./CameraOverlay.vue";
 import CameraTimestamp from "./CameraTimestamp.vue";
-import { demoMode } from "@/utils/demo";
 import { gridRectsKey } from "./gridContext";
 
 const props = withDefaults(
@@ -50,7 +49,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useT(["views/app"]);
-const activity = useCameraActivity(() => props.camera.name);
 const manual = useManualRecording(() => props.camera.name);
 const audio = useStreamAudio(
   () => cameraStreams(props.camera)[0]?.[1] ?? undefined,
@@ -64,44 +62,13 @@ function onContextMenu(event: MouseEvent) {
 const recordingNow = computed(() => !!manual.eventId.value);
 const liveRef = shallowRef<InstanceType<typeof LiveVideo> | null>(null);
 
-const SMART_LINGER = 30_000;
-const recentlyActive = shallowRef(false);
-let lingerTimer: ReturnType<typeof setTimeout> | undefined;
-
-const busy = computed(
-  () => activity.activeTracking.value || activity.activeMotion.value,
-);
-watch(
-  busy,
-  (now) => {
-    clearTimeout(lingerTimer);
-    if (now) recentlyActive.value = true;
-    else
-      lingerTimer = setTimeout(
-        () => (recentlyActive.value = false),
-        SMART_LINGER,
-      );
+const { activity, busy, hovered, streamWanted, liveShown } = useSmartStream(
+  () => props.camera.name,
+  {
+    force: () =>
+      props.streaming === "continuous" || !props.muted || props.showStats,
   },
-  { immediate: true },
 );
-onBeforeUnmount(() => clearTimeout(lingerTimer));
-
-const hovered = shallowRef(false);
-const streamWanted = computed(
-  () =>
-    !demoMode &&
-    activity.enabled.value &&
-    !activity.offline.value &&
-    (props.streaming === "continuous" ||
-      recentlyActive.value ||
-      hovered.value ||
-      !props.muted ||
-      props.showStats),
-);
-const liveShown = shallowRef(false);
-watch(streamWanted, (wanted) => {
-  if (!wanted) liveShown.value = false;
-});
 
 const aspect = computed(() => {
   const { width, height } = props.camera.detect;

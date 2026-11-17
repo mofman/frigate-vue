@@ -258,6 +258,19 @@ watch(playback.mode, (mode) => {
   }
 });
 
+// ---- camera strip ------------------------------------------------------------
+
+const stripMode = computed(() =>
+  playback.isLive.value ? "live" : "recording",
+);
+// follow a scrub exactly; while playing, step once a second so the strip's
+// preview clips are not all seeked on every timeupdate
+const stripTime = computed(() =>
+  playback.scrubbing.value
+    ? playback.scrubTime.value
+    : Math.floor(playback.time.value),
+);
+
 function selectCamera(name: string) {
   const query =
     playback.mode.value === "recording"
@@ -504,6 +517,8 @@ function onSwitched(kind: string, ms: number) {
           v-if="desktop"
           :cameras="cameras"
           :current="name"
+          :mode="stripMode"
+          :time="stripTime"
           @select="selectCamera"
         />
       </section>

@@ -66,6 +66,19 @@ test.describe("unified camera view", () => {
     await expect(page).not.toHaveURL(/t=/);
   });
 
+  test("the camera strip follows the stage into recordings", async ({
+    frigateApp,
+  }, testInfo) => {
+    // the strip is desktop only
+    test.skip(testInfo.project.name === "mobile");
+    const page = frigateApp.page;
+    const anHourAgo = Math.floor(Date.now() / 1000) - 3600;
+    const otherCamera = page.waitForRequest(/api\/preview\/backyard\/start\//);
+    await frigateApp.goto(`/camera/front_door?t=${anHourAgo}`);
+    await expect(page.locator(".mode-badge--recording")).toBeVisible();
+    await otherCamera;
+  });
+
   test("switching cameras keeps the view mounted", async ({ frigateApp }) => {
     const page = frigateApp.page;
     await frigateApp.goto("/camera/front_door");
