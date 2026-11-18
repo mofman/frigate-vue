@@ -152,7 +152,11 @@ These were removed with the React app and can be recovered from git history
 (`git show 8d4e6b52d:web/src/...` is the last commit with the React app).
 Those with a sidebar slot show as disabled items until they land.
 
-- [ ] Explore (search, tracked object details, semantic search)
+- [x] Explore: label summary, results grid with date and offset paging, filters in the URL, typed `key:value` search, saved searches, semantic and similarity search, multi-select delete, object dialog (details, editing, regenerate, transcription, attributes, Frigate+), Tracking Details (clip, timeline, overlay, annotation offset)
+  - [ ] Add Trigger (needs the Settings triggers page)
+  - [ ] Debug Replay action (needs the replay page)
+  - [ ] Create Object Mask from a tracking step (needs the Settings masks page)
+  - [ ] Camera groups in the camera filter
 - [x] Exports (list grouped by case, live job progress, play, download, share, rename, delete)
   - [ ] Case management: create, edit, delete, move exports between cases
 - [ ] Settings (UI settings, camera settings, masks / zones, users, notifications, enrichments)

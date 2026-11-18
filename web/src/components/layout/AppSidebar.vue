@@ -24,7 +24,6 @@ const { data: alerts, refresh } = useQuery<ReviewSegment[]>(
 onWsMessage("reviews", () => void refresh());
 
 const alertCount = computed(() => alerts.value?.length ?? 0);
-const soon = computed(() => t("nav.comingSoon"));
 /** exports still being made */
 const { count: exportJobs } = useExportJobs();
 </script>
@@ -44,10 +43,9 @@ const { count: exportJobs } = useExportJobs();
           :badge="alertCount"
         />
         <SidebarNavItem
+          to="/explore"
           :icon="Search"
           :label="t('nav.explore')"
-          disabled
-          :disabled-hint="soon"
         />
         <SidebarNavItem
           to="/export"

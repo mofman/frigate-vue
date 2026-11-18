@@ -19,6 +19,20 @@ export function inpointOffset(
   return 0;
 }
 
+/**
+ * Offset for a clip playlist. The server may snap the start back to a keyframe
+ * and reports where it really started as `clipFrom`, in milliseconds from the
+ * start of the first segment. Without one the whole segment is included.
+ */
+export function clipOffset(
+  windowStart: number,
+  first: RecordingSpan | undefined,
+  clipFrom: number | undefined,
+) {
+  if (!first || first.start_time >= windowStart) return 0;
+  return clipFrom === undefined ? 0 : clipFrom / 1000;
+}
+
 /** Playlist seconds for a wall clock timestamp, or undefined when not recorded. */
 export function seekPosition(
   timestamp: number,

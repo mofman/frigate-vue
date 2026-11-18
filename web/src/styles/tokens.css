@@ -73,6 +73,17 @@
     --danger-surface: rgb(239 68 68 / 0.1);
     --playhead: #9d1b1e;
 
+    /* tracked object path points, by lifecycle step */
+    --track-visible: rgb(0 255 0);
+    --track-gone: rgb(255 0 0);
+    --track-zone: rgb(255 165 0);
+    --track-attribute: rgb(128 0 128);
+    --track-active: rgb(255 255 0);
+    --track-stationary: rgb(128 128 128);
+    --track-heard: rgb(0 255 255);
+    --track-external: rgb(165 42 42);
+    --track-point: rgb(255 255 255 / 0.85);
+
     /* export selection on the timeline */
     --export: var(--accent-strong);
     --export-surface: rgb(92 120 255 / 0.2);

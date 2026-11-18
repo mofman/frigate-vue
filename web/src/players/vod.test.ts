@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  clipOffset,
   inpointOffset,
   nextRecorded,
   seekPosition,
@@ -75,5 +76,19 @@ describe("vodWindow", () => {
     expect(vodWindow(5 * 3600 + 5, now)).toEqual(
       vodWindow(5 * 3600 + 3000, now),
     );
+  });
+});
+
+describe("clipOffset", () => {
+  const first = { start_time: 100, end_time: 110, duration: 10 };
+
+  it("uses where the server really started the clip", () => {
+    expect(clipOffset(104, first, 2500)).toBe(2.5);
+  });
+
+  it("is zero without a trim or when the segment starts inside the clip", () => {
+    expect(clipOffset(104, first, undefined)).toBe(0);
+    expect(clipOffset(100, first, 2500)).toBe(0);
+    expect(clipOffset(104, undefined, 2500)).toBe(0);
   });
 });

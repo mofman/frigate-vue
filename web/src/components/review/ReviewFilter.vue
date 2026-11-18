@@ -2,6 +2,7 @@
 /** Severity, label and zone filter for a camera's review items. */
 import { computed } from "vue";
 import { Filter } from "@lucide/vue";
+import FilterChips from "@/components/ui/FilterChips.vue";
 import IconButton from "@/components/ui/IconButton.vue";
 import MenuLabel from "@/components/ui/MenuLabel.vue";
 import PopoverMenu from "@/components/ui/PopoverMenu.vue";
@@ -36,15 +37,26 @@ const severity = computed({
   set: (value) => (model.value = { ...model.value, severity: value }),
 });
 
-function toggle(kind: "labels" | "zones", value: string) {
-  const list = model.value[kind];
-  model.value = {
-    ...model.value,
-    [kind]: list.includes(value)
-      ? list.filter((item) => item !== value)
-      : [...list, value],
-  };
-}
+const selectedLabels = computed({
+  get: () => model.value.labels,
+  set: (labels) => (model.value = { ...model.value, labels }),
+});
+const selectedZones = computed({
+  get: () => model.value.zones,
+  set: (zones) => (model.value = { ...model.value, zones }),
+});
+const labelOptions = computed(() =>
+  props.labels.map((label) => ({
+    value: label,
+    label: t(`objects:${label}`, { defaultValue: label }),
+  })),
+);
+const zoneOptions = computed(() =>
+  props.zones.map((zone) => ({
+    value: zone,
+    label: zone.replaceAll("_", " "),
+  })),
+);
 
 function reset() {
   model.value = { severity: "all", labels: [], zones: [] };
@@ -86,33 +98,19 @@ const hasZones = computed(() => props.zones.length > 0);
       />
       <template v-if="labels.length">
         <MenuLabel>{{ t("toolbar.labels") }}</MenuLabel>
-        <div class="review-filter__chips">
-          <button
-            v-for="label in labels"
-            :key="label"
-            type="button"
-            class="review-filter__chip"
-            :aria-pressed="model.labels.includes(label)"
-            @click="toggle('labels', label)"
-          >
-            {{ t(`objects:${label}`, { defaultValue: label }) }}
-          </button>
-        </div>
+        <FilterChips
+          v-model="selectedLabels"
+          class="review-filter__chips"
+          :options="labelOptions"
+        />
       </template>
       <template v-if="hasZones">
         <MenuLabel>{{ t("toolbar.zones") }}</MenuLabel>
-        <div class="review-filter__chips">
-          <button
-            v-for="zone in zones"
-            :key="zone"
-            type="button"
-            class="review-filter__chip"
-            :aria-pressed="model.zones.includes(zone)"
-            @click="toggle('zones', zone)"
-          >
-            {{ zone.replaceAll("_", " ") }}
-          </button>
-        </div>
+        <FilterChips
+          v-model="selectedZones"
+          class="review-filter__chips"
+          :options="zoneOptions"
+        />
       </template>
       <button
         v-if="active"
@@ -139,30 +137,7 @@ const hasZones = computed(() => props.zones.length > 0);
 }
 
 .review-filter__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
   padding: 2px 10px 6px;
-}
-
-.review-filter__chip {
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--glass-border);
-  background: var(--bg-deep);
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  text-transform: capitalize;
-
-  &:hover {
-    border-color: var(--line-hover);
-  }
-
-  &[aria-pressed="true"] {
-    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-    background: var(--selected-surface);
-    color: var(--text-primary);
-  }
 }
 
 .review-filter__reset {

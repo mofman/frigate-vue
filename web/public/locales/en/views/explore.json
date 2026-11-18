@@ -261,5 +261,17 @@
   },
   "objectLifecycle": {
     "noImageFound": "No image found for this tracked object."
+  },
+  "ui": {
+    "openObject": "Open {{label}} from {{camera}}, {{time}}",
+    "loadFailed": "Tracked objects could not be loaded",
+    "objectNotFound": "This tracked object could not be found",
+    "savedSearchName": "Search name",
+    "savedSearchOverwrite": "A saved search with this name will be replaced.",
+    "savedSearchDelete": "Delete the saved search \"{{name}}\"?",
+    "clipUnavailable": "No recording is available for this tracked object",
+    "offsetDecrease": "Decrease annotation offset",
+    "offsetIncrease": "Increase annotation offset",
+    "rowActions": "Actions for this step"
   }
 }

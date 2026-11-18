@@ -11,6 +11,7 @@ import { baseUrl } from "@/api/baseUrl";
 import { http, HttpError } from "@/api/http";
 import type { RecordingCoverage, RecordingSpan } from "@/types/frigate";
 import {
+  clipOffset,
   inpointOffset,
   nextRecorded,
   seekPosition,
@@ -29,6 +30,10 @@ export type RecordingSource = {
 };
 
 export type RecordingStatus = "idle" | "loading" | "ready" | "empty" | "error";
+
+type VodClipManifest = {
+  sequences?: { clips?: { clipFrom?: number }[] }[];
+};
 
 const BUFFERING_DEBOUNCE = 250;
 
@@ -183,6 +188,55 @@ export class RecordingPlayer {
       playlist: `${baseUrl}vod/${camera}/start/${after}/end/${before}/master.m3u8`,
     };
     this.attach(this.source, timestamp, load, play);
+  }
+
+  /** Load exactly this range as a clip, as for a single tracked object. */
+  async loadClip(
+    camera: string,
+    after: number,
+    before: number,
+    { play = true } = {},
+  ) {
+    const token = ++this.loadToken;
+    this.status.value = "loading";
+    const clip = `vod/clip/${camera}/start/${after}/end/${before}`;
+
+    let spans: RecordingSpan[];
+    let manifest: VodClipManifest | undefined;
+    try {
+      [spans, manifest] = await Promise.all([
+        fetchSpans(camera, after, before),
+        // without it playback still works, only less exactly aligned
+        http.get<VodClipManifest>(clip).catch(() => undefined),
+      ]);
+    } catch {
+      if (token === this.loadToken) this.status.value = "error";
+      return;
+    }
+    if (token !== this.loadToken) return;
+
+    if (!spans.length) {
+      this.source = undefined;
+      this.status.value = "empty";
+      return;
+    }
+
+    const first = spans[0];
+    this.source = {
+      camera,
+      after,
+      before,
+      spans,
+      offset: manifest
+        ? clipOffset(
+            after,
+            first,
+            manifest.sequences?.[0]?.clips?.[0]?.clipFrom,
+          )
+        : inpointOffset(after, first),
+      playlist: `${baseUrl}${clip}/index.m3u8`,
+    };
+    this.attach(this.source, after, true, play);
   }
 
   /** Seek within the loaded window. Returns false when outside it. */

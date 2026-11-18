@@ -73,6 +73,8 @@ async function load(id: string, key: QueryKey): Promise<unknown> {
     })
     .catch((error: unknown) => {
       entry.error = error;
+      // counts as an attempt, or sync() would retry a failing request forever
+      entry.updatedAt = Date.now();
       throw error;
     })
     .finally(() => {

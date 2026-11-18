@@ -29,6 +29,11 @@ export const router = createRouter({
       component: () => import("@/views/ReviewView.vue"),
     },
     {
+      path: "/explore",
+      name: "explore",
+      component: () => import("@/views/ExploreView.vue"),
+    },
+    {
       // not /exports, which the server uses for the exported files themselves
       path: "/export",
       name: "exports",

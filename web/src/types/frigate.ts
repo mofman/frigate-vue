@@ -7,8 +7,19 @@ export type CameraConfig = {
   friendly_name?: string;
   enabled: boolean;
   enabled_in_config: boolean;
-  audio: { enabled: boolean; enabled_in_config: boolean };
-  detect: { enabled: boolean; width: number; height: number; fps: number };
+  type?: string;
+  audio: {
+    enabled: boolean;
+    enabled_in_config: boolean;
+    listen?: string[];
+  };
+  detect: {
+    enabled: boolean;
+    width: number;
+    height: number;
+    fps: number;
+    annotation_offset?: number;
+  };
   record: { enabled: boolean; enabled_in_config: boolean };
   snapshots: { enabled: boolean };
   live: { height: number; quality: number; streams: Record<string, string> };
@@ -26,8 +37,22 @@ export type CameraConfig = {
     }[];
   };
   notifications?: { enabled: boolean; enabled_in_config: boolean };
-  objects?: { track: string[] };
-  zones?: Record<string, unknown>;
+  objects?: {
+    track: string[];
+    genai?: {
+      enabled: boolean;
+      required_zones: string[];
+      objects: string[];
+    };
+  };
+  zones?: Record<
+    string,
+    {
+      friendly_name?: string;
+      color?: number[];
+      coordinates?: string | string[];
+    }
+  >;
   onvif?: { host?: string; autotracking?: { enabled_in_config: boolean } };
   ui: { order: number; dashboard: boolean };
   webui_url?: string | null;
@@ -58,7 +83,11 @@ export type FrigateConfig = {
     time_format?: "browser" | "12hour" | "24hour";
     date_style?: "full" | "long" | "medium" | "short";
     time_style?: "full" | "long" | "medium" | "short";
+    unit_system?: "imperial" | "metric";
   };
+  plus?: { enabled: boolean };
+  classification?: { custom?: Record<string, unknown> };
+  genai?: Record<string, { provider?: string; roles?: string[] }>;
   proxy?: { logout_url?: string };
   model?: { attributes_map?: Record<string, string[]> };
   /** true when the config failed validation and Frigate started without it */
@@ -83,6 +112,8 @@ export type FrigateConfig = {
 export type DetectionModelConfig = {
   scene?: string;
   devices: string[];
+  /** BGR drawing color for each label */
+  colormap?: Record<string, number[]>;
 };
 
 export type UserProfile = {
