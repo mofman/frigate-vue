@@ -72,7 +72,7 @@ const spp = computed(() => zoom.value.secondsPerPx);
 
 // the top of the timeline sits a fixed number of rows above now, on a row
 // boundary: room for the live handle plus a short "future" strip above it
-const LEAD_ROWS = 16;
+const LEAD_ROWS = 8;
 const anchorFor = (time: number) => {
   const segment = ROW * spp.value;
   return Math.ceil((time + LEAD_ROWS * segment) / segment) * segment;

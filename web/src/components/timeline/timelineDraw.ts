@@ -130,9 +130,13 @@ export function draw(ctx: CanvasRenderingContext2D, input: DrawInput) {
   ctx.fillStyle = palette.gap;
   for (const bucket of input.buckets) {
     for (const gap of bucket.unavailable) {
-      if (gap.end_time < bottomTime || gap.start_time > topTime) continue;
+      // the current hour's last gap runs to the end of the hour, but time that
+      // has not happened yet is not missing footage
+      const end = Math.min(gap.end_time, now);
+      if (end <= gap.start_time) continue;
+      if (end < bottomTime || gap.start_time > topTime) continue;
       gaps.push(gap);
-      const y1 = y(gap.end_time);
+      const y1 = y(end);
       const y2 = y(gap.start_time);
       ctx.fillRect(0, y1, width, Math.max(1, y2 - y1));
     }
