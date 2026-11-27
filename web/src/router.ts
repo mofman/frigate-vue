@@ -58,6 +58,12 @@ export const router = createRouter({
       meta: { admin: true },
     },
     {
+      path: "/setup",
+      name: "setup",
+      component: () => import("@/views/SetupView.vue"),
+      meta: { admin: true, bare: true },
+    },
+    {
       path: "/login",
       name: "login",
       component: () => import("@/views/LoginView.vue"),

@@ -7,7 +7,12 @@ import { shallowRef, watch } from "vue";
 import { X } from "@lucide/vue";
 import { useT } from "@/composables/useT";
 
-defineProps<{ title: string; width?: string }>();
+const props = defineProps<{
+  title: string;
+  width?: string;
+  /** only the close button dismisses it, for forms that are costly to lose */
+  persistent?: boolean;
+}>();
 const open = defineModel<boolean>("open", { required: true });
 const { t } = useT(["views/app"]);
 const dialog = shallowRef<HTMLDialogElement | null>(null);
@@ -23,7 +28,11 @@ watch(
 );
 
 function onBackdrop(event: MouseEvent) {
-  if (event.target === dialog.value) open.value = false;
+  if (!props.persistent && event.target === dialog.value) open.value = false;
+}
+
+function onCancel(event: Event) {
+  if (props.persistent) event.preventDefault();
 }
 </script>
 
@@ -32,6 +41,7 @@ function onBackdrop(event: MouseEvent) {
     ref="dialog"
     class="app-dialog"
     :style="{ inlineSize: width ?? '440px' }"
+    @cancel="onCancel"
     @close="open = false"
     @click="onBackdrop"
   >

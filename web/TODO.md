@@ -141,7 +141,7 @@ the matching System tab. All three routes are admin only and lazy loaded.
 - [x] Health: registry notices (acknowledge, mute, hidden list, show all again, severity filter) and the hardware pane (detection, hwaccel, enrichments, camera connections, re-check)
 - [x] Logs: frigate / go2rtc / nginx in the hash, last 200 lines then a live stream, older lines on scroll up, level filter, copy, download, line details
 - [ ] Health: browser side config checks (needs the settings form section configs ported first)
-- [ ] Health: stream checks (ffprobe every camera, needs the camera wizard stream rules)
+- [ ] Health: stream checks (ffprobe every camera; the stream rules are now in `utils/streamIssues.ts`)
 - [ ] Cameras: keyframe analysis in the probe dialog
 - [ ] Logs: websocket message feed tab
 - [ ] Status bar notices summary (the old bar listed active notices)
@@ -163,4 +163,6 @@ Those with a sidebar slot show as disabled items until they land.
 - [ ] Face library, classification models
 - [ ] Chat
 - [ ] Debug replay, motion search
-- [ ] Setup wizard
+- [x] Setup wizard: first run flow at `/setup` (account, cameras, detector, hwaccel, recording, restart) and the Add Camera wizard (ONVIF probe or brand url, stream roles, live validation)
+  - [ ] Add Camera: estimated bandwidth readout (live sessions do not report bandwidth yet)
+  - [ ] Add Camera entry point in Settings (needs the camera management page)

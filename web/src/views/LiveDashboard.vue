@@ -8,13 +8,16 @@ import PageHeader from "@/components/layout/PageHeader.vue";
 import CameraGrid from "@/components/camera/CameraGrid.vue";
 import CameraTile from "@/components/camera/CameraTile.vue";
 import ActivityPanel from "@/components/review/ActivityPanel.vue";
+import AppButton from "@/components/ui/AppButton.vue";
 import CountPill from "@/components/ui/CountPill.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import IconButton from "@/components/ui/IconButton.vue";
 import SegmentedToggle from "@/components/ui/SegmentedToggle.vue";
+import { useFirstRunSetup } from "@/composables/useFirstRunSetup";
 import {
   useCameras,
   useConfig,
+  useIsAdmin,
   useStats,
   isCameraOffline,
 } from "@/composables/useFrigate";
@@ -27,6 +30,14 @@ const route = useRoute();
 const cameras = useCameras();
 const stats = useStats();
 const { data: config } = useConfig();
+const isAdmin = useIsAdmin();
+const { pending: setupPending } = useFirstRunSetup();
+const canRunSetup = computed(
+  () =>
+    isAdmin.value &&
+    !!config.value &&
+    Object.keys(config.value.cameras ?? {}).length === 0,
+);
 
 // ---- camera group: remembered, and shareable through ?group= ---------------
 
@@ -194,7 +205,15 @@ async function open(name: string) {
           @open="open(camera.name)"
         />
       </CameraGrid>
-      <EmptyState v-else :title="t('dashboard.noCameras')" />
+      <EmptyState v-else-if="!setupPending" :title="t('dashboard.noCameras')">
+        <AppButton
+          v-if="canRunSetup"
+          variant="primary"
+          @click="router.push({ name: 'setup' })"
+        >
+          {{ t("dashboard.runSetup") }}
+        </AppButton>
+      </EmptyState>
       <ActivityPanel :cameras="dashboardCameras.map((camera) => camera.name)" />
     </div>
   </div>

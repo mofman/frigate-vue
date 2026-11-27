@@ -1,9 +1,7 @@
 <script setup lang="ts">
 /** App frame: rail, page area and status bar. */
-import ToastHost from "@/components/ui/ToastHost.vue";
 import AppSidebar from "./AppSidebar.vue";
 import StatusBar from "./StatusBar.vue";
-import RestartDialog from "./RestartDialog.vue";
 import { startExportJobs } from "@/composables/useExportJobs";
 
 startExportJobs();
@@ -16,8 +14,6 @@ startExportJobs();
       <slot />
     </main>
     <StatusBar />
-    <ToastHost />
-    <RestartDialog />
   </div>
 </template>
 

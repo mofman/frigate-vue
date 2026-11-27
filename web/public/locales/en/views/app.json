@@ -36,6 +36,7 @@
     "smartStreaming": "Smart",
     "continuousStreaming": "Always",
     "noCameras": "No cameras are configured",
+    "runSetup": "Set up Frigate",
     "openCamera": "Open {{camera}}",
     "offline": "Offline",
     "snapshot": "Open snapshot",

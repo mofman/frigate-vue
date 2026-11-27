@@ -287,6 +287,32 @@ export class ApiMocker {
       const entries = (camera && overrides?.ffprobe?.[camera]) || FFPROBE_OK;
       return route.fulfill({ json: entries });
     });
+    await this.page.route("**/api/ffprobe/snapshot**", (route) =>
+      route.fulfill({ contentType: "image/png", body: PLACEHOLDER_PNG }),
+    );
+
+    // Camera discovery for the Add Camera wizard
+    await this.page.route("**/api/onvif/probe**", (route) =>
+      route.fulfill({
+        json: {
+          success: true,
+          manufacturer: "Acme",
+          model: "Cam 1",
+          profiles_count: 2,
+          ptz_supported: false,
+          rtsp_candidates: [
+            {
+              source: "GetStreamUri",
+              uri: "rtsp://admin:secret@192.168.1.20:554/main",
+            },
+            {
+              source: "GetStreamUri",
+              uri: "rtsp://admin:secret@192.168.1.20:554/sub",
+            },
+          ],
+        },
+      }),
+    );
 
     // Notices
     await this.page.route("**/api/notices", (route) =>

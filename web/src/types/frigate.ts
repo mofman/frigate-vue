@@ -86,6 +86,7 @@ export type FrigateConfig = {
     unit_system?: "imperial" | "metric";
   };
   plus?: { enabled: boolean };
+  auth?: { enabled?: boolean; roles?: Record<string, unknown> };
   classification?: { custom?: Record<string, unknown> };
   genai?: Record<string, { provider?: string; roles?: string[] }>;
   proxy?: { logout_url?: string };
